@@ -148,7 +148,9 @@ pode perguntar nada: se a vaga tiver algo estranho, ele para e avisa, e você de
 **Confira sempre o currículo e a carta antes de enviar.**
 
 O [PAINEL.md](PAINEL.md) explica o fluxo inteiro aba por aba, o que cada aviso quer dizer e o
-que fazer quando algo não funciona.
+que fazer quando algo não funciona. O [TUTORIAL.md](TUTORIAL.md) mostra o caminho completo com
+um exemplo: perfil, busca, avaliação, currículo e carta, revisão, envio, acompanhamento e
+entrevista.
 
 Para fechar o painel, feche a janela preta. O painel só funciona no seu computador. Além das
 buscas nos portais, só o Claude sai para a internet, para ler a vaga e pesquisar a empresa.

@@ -22,6 +22,11 @@ per-file diff commands.
   deciding, a troubleshooting table, and, at the end, what runs behind each button, where every
   file lands (and which ones git tracks) and what each panel run may do. Linked from the README,
   `COMECE-AQUI.md` and `tools/painel.py`.
+- **`TUTORIAL.md`, the whole job search end to end** - follows a fictional candidate from
+  installation to the interview: profile, search, evaluation, CV and cover letter, a review
+  checklist before sending, sending (form fields, salary expectation), follow-up, `/interview`, a
+  weekly routine, keeping the profile current, a glossary and an FAQ. Each step shows both the
+  panel path and the conversation path. Linked from the README, `COMECE-AQUI.md` and `PAINEL.md`.
 
 - **The local panel runs `/apply` from buttons** (`tools/painel.py`, `tools/painel/index.html`,
   `tools/painel/claude-settings.json`, `tests/test_painel.py`) - the "Me interessam" tab gets

@@ -6,7 +6,9 @@ currículo e carta. Nada aqui exige escrever comandos. Quando quiser acompanhar 
 junto, cada etapa também tem o caminho pela conversa com o Claude.
 
 Este guia mostra o fluxo inteiro, aba por aba. A parte técnica (onde cada coisa é gravada, o
-que roda por trás, permissões) está no fim.
+que roda por trás, permissões) está no fim. Para o caminho completo com um exemplo, incluindo o
+que vem depois do painel (revisar, enviar, acompanhar, entrevista), veja o
+[TUTORIAL.md](TUTORIAL.md).
 
 ---
 

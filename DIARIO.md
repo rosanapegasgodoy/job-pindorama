@@ -251,6 +251,7 @@ Ao fim da sessão, o projeto tem **18 portais**: os 16 da sessão 3, mais DigAÍ
 | `security_guards.py` | Checagem 6: o arquivo de permissões do painel só pode ter entradas da lista revisada |
 | Aba "Meu perfil" | O começo do processo em botões: enviar o currículo e o PDF do LinkedIn, um formulário com o que o currículo não diz e um botão que roda o Caminho A do `/setup` sem conversa. Num perfil existente, grava o que é novo, mantém o que já está e lista os conflitos para revisão. Confere se o repositório é público antes de gravar. Esse Claude não tem web nem shell |
 | Documentação | README (seções "O `/apply` pelo painel" e "Prefere botões?" do `/setup`), `COMECE-AQUI.md`, `SECURITY.md`, `documents/README.md`, CHANGELOG e este diário |
+| `TUTORIAL.md` | O caminho inteiro com uma pessoa de exemplo, da instalação à entrevista, pelo painel e pela conversa, com checklist de revisão antes de enviar, rotina semanal, glossário e perguntas frequentes |
 | `PAINEL.md` | Um guia só para o painel: o fluxo inteiro aba por aba, com diagrama, o que cada aviso quer dizer, quando o Claude para em vez de decidir, o que fazer quando algo falha, e por dentro: o que roda em cada botão, onde cada arquivo fica e o que cada Claude do painel pode fazer |
 
 ### Problemas e como foram resolvidos
@@ -277,7 +278,7 @@ Ao fim da sessão, o projeto tem **18 portais**: os 16 da sessão 3, mais DigAÍ
 | #19 | Texto completo das vagas de agregadores (Remotar, Agrobase) |
 | #20 | Painel local da busca (protótipo) |
 | #21 | O painel com Meu perfil, avaliação de vagas e currículo e carta pelo Claude |
-| #22 | `PAINEL.md`, o fluxo inteiro do painel |
+| #22 | `PAINEL.md` e `TUTORIAL.md`, e os testes do painel sem chamar o `gh` |
 
 ### Próxima sessão
 

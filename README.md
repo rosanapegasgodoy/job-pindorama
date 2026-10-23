@@ -65,6 +65,10 @@ O projeto incorpora boas práticas de orientação de carreira: critérios de av
 > **Prefere botões a comandos?** O painel local faz o caminho inteiro (perfil, busca, triagem,
 > avaliação, currículo e carta) sem você escrever nada. O [PAINEL.md](PAINEL.md) mostra o fluxo
 > aba por aba.
+>
+> **Quer ver o caminho inteiro de uma vez?** O [TUTORIAL.md](TUTORIAL.md) acompanha uma pessoa de
+> exemplo da instalação à entrevista: perfil, busca, avaliação, currículo e carta, revisão, envio
+> e acompanhamento, pelo painel e pela conversa.
 
 ### 1. Fork e clone
 
@@ -227,6 +231,7 @@ job-pindorama/
 ├── job_search_tracker.csv             # Planilha de acompanhamento das candidaturas
 ├── COMECE-AQUI.md                     # Instalação sem terminal (cliques + pedidos ao Claude)
 ├── PAINEL.md                          # O painel local: o fluxo inteiro em botões
+├── TUTORIAL.md                        # Tutorial completo, da instalação à entrevista
 └── SETUP.md                           # Guia de instalação detalhado
 ```
 
