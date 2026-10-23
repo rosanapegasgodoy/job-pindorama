@@ -7,12 +7,19 @@
                  trabalho, regimes, pretensão, níveis, cargos a buscar...),
                  gravado em documents/perfil/respostas.json (fora do git);
   * Privacidade - para onde o repositório publica, conferido antes de o Claude
-                 gravar o perfil em arquivos rastreados pelo git.
+                 propor o perfil, que vai para arquivos rastreados pelo git;
+  * Proposta   - o Claude não grava o perfil: escreve a versão nova de cada
+                 arquivo em documents/perfil/proposta/, o painel mostra o que
+                 muda e só o clique em "Aplicar" copia para o lugar. Sem
+                 conversa, o Claude Code trata qualquer caminho com `.claude/`
+                 como sensível e recusa a gravação mesmo com a permissão
+                 liberada; por isso a proposta usa `claude/` no lugar.
 
 Funções puras, testadas sem servidor; quem chama o Claude é o painel.
 """
 
 import base64
+import difflib
 import json
 import os
 import re
@@ -27,6 +34,11 @@ ANSWERS = DOCUMENTS / "perfil" / "respostas.json"
 PROFILE_MD = ROOT / ".claude" / "skills" / "job-application-assistant" / "01-candidate-profile.md"
 UPLOAD_KINDS = {"cv": "cv", "linkedin": "linkedin"}
 MAX_UPLOAD = 10_000_000
+STAGING = DOCUMENTS / "perfil" / "proposta"
+# Os arquivos que o /setup grava; qualquer outro arquivo na proposta é ignorado.
+TARGETS = re.compile(r"^(CLAUDE\.md|\.claude/skills/job-application-assistant/0[1-9]-[\w-]+\.md"
+                     r"|\.claude/skills/job-scraper/search-queries\.md|cv/main_example\.tex)$")
+MAX_DIFF_LINES = 400
 
 LEVELS = ["estagio", "junior", "pleno", "senior", "especialista", "staff", "lead", "gestao"]
 
@@ -219,6 +231,74 @@ def profile_text(path: Path = PROFILE_MD) -> str | None:
         return path.read_text(encoding="utf-8")
     except OSError:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Proposta: o perfil novo, revisado antes de ir para o lugar
+# ---------------------------------------------------------------------------
+
+def staging_name(target: str) -> str:
+    """O caminho na proposta: `.claude/` vira `claude/` (o Claude Code recusa `.claude` sem conversa)."""
+    return "claude/" + target[len(".claude/"):] if target.startswith(".claude/") else target
+
+
+def target_name(staged: str) -> str:
+    return ".claude/" + staged[len("claude/"):] if staged.startswith("claude/") else staged
+
+
+def proposal(root: Path = ROOT, staging: Path = STAGING) -> dict:
+    """O que a proposta muda, arquivo por arquivo, com o diff; arquivos fora do perfil são ignorados."""
+    files, ignored = [], []
+    if not staging.is_dir():
+        return {"files": files, "ignored": ignored}
+    for path in sorted(staging.rglob("*")):
+        if not path.is_file():
+            continue
+        staged = path.relative_to(staging).as_posix()
+        target = target_name(staged)
+        if path.is_symlink() or not TARGETS.match(target):
+            ignored.append(staged)
+            continue
+        try:
+            new = path.read_text(encoding="utf-8").replace("\r\n", "\n")
+        except (OSError, UnicodeDecodeError):
+            ignored.append(staged)
+            continue
+        current = root / target
+        old = current.read_text(encoding="utf-8").replace("\r\n", "\n") if current.is_file() else ""
+        if new == old:
+            continue
+        diff = list(difflib.unified_diff(old.splitlines(), new.splitlines(), "atual", "proposta", n=2, lineterm=""))[2:]
+        files.append({
+            "path": target, "new_file": not current.is_file(),
+            "added": sum(1 for l in diff if l.startswith("+")), "removed": sum(1 for l in diff if l.startswith("-")),
+            "diff": diff[:MAX_DIFF_LINES], "truncated": len(diff) > MAX_DIFF_LINES,
+        })
+    return {"files": files, "ignored": ignored}
+
+
+def apply_proposal(paths: list | None = None, root: Path = ROOT, staging: Path = STAGING) -> list:
+    """Copia para o lugar os arquivos da proposta (todos, ou só `paths`), mantendo o fim de linha de cada um."""
+    applied = []
+    for item in proposal(root, staging)["files"]:
+        target = item["path"]
+        if paths is not None and target not in paths:
+            continue
+        staged = staging / staging_name(target)
+        new = staged.read_text(encoding="utf-8").replace("\r\n", "\n")
+        current = root / target
+        crlf = current.is_file() and b"\r\n" in current.read_bytes()
+        current.parent.mkdir(parents=True, exist_ok=True)
+        current.write_bytes((new.replace("\n", "\r\n") if crlf else new).encode("utf-8"))
+        staged.unlink()
+        applied.append(target)
+    if not proposal(root, staging)["files"]:
+        discard_proposal(staging)
+    return applied
+
+
+def discard_proposal(staging: Path = STAGING) -> None:
+    shutil.rmtree(staging, ignore_errors=True)
 
 
 def profile_ready(claude_md: Path = ROOT / "CLAUDE.md") -> bool:

@@ -6,14 +6,7 @@
       "Grep",
       "Skill(setup)",
       "Skill(job-application-assistant)",
-      "Write(CLAUDE.md)",
-      "Edit(CLAUDE.md)",
-      "Write(.claude/skills/job-application-assistant/0*.md)",
-      "Edit(.claude/skills/job-application-assistant/0*.md)",
-      "Write(.claude/skills/job-scraper/search-queries.md)",
-      "Edit(.claude/skills/job-scraper/search-queries.md)",
-      "Write(cv/main_example.tex)",
-      "Edit(cv/main_example.tex)"
+      "Edit(documents/perfil/proposta/**)"
     ]
   }
 }

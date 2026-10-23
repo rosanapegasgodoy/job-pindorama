@@ -102,5 +102,60 @@ class Privacy(unittest.TestCase):
             self.assertFalse(painel_perfil.profile_ready(Path(tmp) / "nao-existe.md"))
 
 
+class Proposal(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name) / "repo"
+        self.staging = self.root / "documents" / "perfil" / "proposta"
+        skills = self.root / ".claude" / "skills" / "job-application-assistant"
+        skills.mkdir(parents=True)
+        (self.root / "CLAUDE.md").write_bytes(b"# Perfil\r\nNome: [YOUR_NAME]\r\n")
+        (skills / "01-candidate-profile.md").write_text("# Perfil\nsem nada\n", encoding="utf-8")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def stage(self, rel, text):
+        path = self.staging / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def test_dot_claude_becomes_claude_and_back(self):
+        rel = ".claude/skills/job-application-assistant/01-candidate-profile.md"
+        self.assertEqual(painel_perfil.staging_name(rel), "claude/skills/job-application-assistant/01-candidate-profile.md")
+        self.assertEqual(painel_perfil.target_name(painel_perfil.staging_name(rel)), rel)
+        self.assertEqual(painel_perfil.staging_name("CLAUDE.md"), "CLAUDE.md")
+
+    def test_diff_ignores_line_endings_and_files_outside_the_profile(self):
+        self.stage("CLAUDE.md", "# Perfil\nNome: Ana\n")
+        self.stage("claude/skills/job-application-assistant/01-candidate-profile.md", "# Perfil\nsem nada\n")
+        self.stage("claude/settings.json", "{}")
+        self.stage("tools/painel.py", "x")
+        got = painel_perfil.proposal(self.root, self.staging)
+        self.assertEqual([f["path"] for f in got["files"]], ["CLAUDE.md"])
+        self.assertEqual((got["files"][0]["added"], got["files"][0]["removed"]), (1, 1))
+        self.assertIn("+Nome: Ana", got["files"][0]["diff"])
+        self.assertEqual(sorted(got["ignored"]), ["claude/settings.json", "tools/painel.py"])
+
+    def test_apply_keeps_crlf_and_clears_the_proposal(self):
+        self.stage("CLAUDE.md", "# Perfil\nNome: Ana\n")
+        self.stage("claude/skills/job-scraper/search-queries.md", "### Prioridade 1\n")
+        applied = painel_perfil.apply_proposal(None, self.root, self.staging)
+        self.assertEqual(sorted(applied), [".claude/skills/job-scraper/search-queries.md", "CLAUDE.md"])
+        self.assertEqual((self.root / "CLAUDE.md").read_bytes(), b"# Perfil\r\nNome: Ana\r\n")
+        self.assertTrue((self.root / ".claude" / "skills" / "job-scraper" / "search-queries.md").is_file())
+        self.assertFalse(self.staging.exists())
+
+    def test_apply_only_the_chosen_files(self):
+        self.stage("CLAUDE.md", "# Perfil\nNome: Ana\n")
+        self.stage("cv/main_example.tex", "novo")
+        self.assertEqual(painel_perfil.apply_proposal(["cv/main_example.tex"], self.root, self.staging),
+                         ["cv/main_example.tex"])
+        self.assertEqual([f["path"] for f in painel_perfil.proposal(self.root, self.staging)["files"]], ["CLAUDE.md"])
+        painel_perfil.discard_proposal(self.staging)
+        self.assertEqual(painel_perfil.proposal(self.root, self.staging), {"files": [], "ignored": []})
+        self.assertIn(b"[YOUR_NAME]", (self.root / "CLAUDE.md").read_bytes())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -74,6 +74,22 @@ per-file diff commands.
 
 ### Fixed
 
+- **The panel's "Montar meu perfil" never wrote half the profile** (`tools/painel.py`,
+  `tools/painel_perfil.py`, `tools/painel/claude-settings-perfil.json`, `tools/security_guards.py`,
+  `tests/test_painel_perfil.py`) - unattended, Claude Code treats any path with a `.claude/`
+  segment as sensitive and refuses the write even when an allow rule covers it, so
+  `01-candidate-profile.md`, the other method files and `search-queries.md` were never written
+  (`CLAUDE.md` and `cv/main_example.tex` were), and the run ended with a report instead of a
+  profile. Measured with `claude -p` on each file. The run now writes only a proposal under
+  `documents/perfil/proposta/` (with `claude/` for `.claude/`); the panel shows the diff per file
+  and copies it into place only when the person clicks "Aplicar ao meu perfil" (keeping each
+  file's line endings), or deletes it on "Descartar". Files in the proposal outside the profile
+  list are ignored. The run's permissions shrink to `Edit(documents/perfil/proposta/**)`: `Edit`
+  rules cover the Write tool, while `Write(...)` rules turned out not to.
+- **Answers in the panel show italics and quotes, and table cells no longer break mid-word**
+  (`tools/painel/index.html`) - a quoted posting came out with raw asterisks, and short cells
+  wrapped as "comportament/al" under `overflow-wrap: anywhere`.
+
 - **`freehire-search detail` no longer asks the API for a slug cut out of a URL on another
   host** (#623, fixes #622, `.agents/skills/freehire-search/cli/src/helpers.ts`, `tests/parsing.test.ts`,
   `tests/commands.test.ts`, `SKILL.md`) - `normalizeSlug` took the segment after `/jobs/` from

@@ -99,6 +99,8 @@ o perfil, melhores os resultados.** Você faz isso uma vez e atualiza quando alg
 
    Clique em **Salvar respostas**.
 4. Clique em **Montar meu perfil com o Claude** e espere alguns minutos.
+5. Role até **Mudanças propostas pelo Claude**, confira cada arquivo (verde entra, vermelho
+   sai) e clique em **Aplicar ao meu perfil**. Antes disso, nada muda.
 
 ### Pela conversa
 
@@ -108,7 +110,7 @@ o perfil, melhores os resultados.** Você faz isso uma vez e atualiza quando alg
 
 ### Confira o resultado (os dois caminhos)
 
-O Claude mostra o que gravou. **Leia com atenção estas três partes:**
+O Claude mostra o que propõe gravar (pelo painel, nada muda até você clicar em **Aplicar**; pela conversa, ele pergunta antes). **Leia com atenção estas três partes:**
 
 - **Inferido:** o que ele deduziu dos documentos sem você ter dito (por exemplo, "prefere
   ambientes colaborativos"). Se não for verdade, corrija.

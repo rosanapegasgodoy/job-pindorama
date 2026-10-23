@@ -20,7 +20,8 @@ flowchart TD
     P --> P1[1. Enviar currículo e LinkedIn em PDF]
     P1 --> P2[2. Responder o formulário]
     P2 --> P3[3. Montar meu perfil com o Claude]
-    P3 --> B[Buscar]
+    P3 --> P4[4. Revisar e aplicar a proposta]
+    P4 --> B[Buscar]
     B --> V[Vagas novas]
     V -->|Descartar| X([Some das próximas buscas])
     V -->|Me interessa| I[Me interessam]
@@ -98,17 +99,27 @@ cada resposta deixa a busca e a avaliação mais certeiras:
 Clique em **Salvar respostas**.
 
 **Passo 3: montar o perfil.** O botão **Montar meu perfil com o Claude** (ou **Atualizar meu
-perfil**, se você já tem um) chama o Claude, que lê os documentos e as respostas e grava o
-perfil. Quando o formulário e o currículo discordam, vale o formulário.
+perfil**, se você já tem um) chama o Claude, que lê os documentos e as respostas e **propõe** o
+perfil. Quando o formulário e o currículo discordam, vale o formulário. **Nada muda no seu
+perfil até você aplicar.**
 
-No fim, aparece **"O que o Claude fez na última montagem"**:
-- o que foi gravado em cada arquivo;
-- **os conflitos** com o perfil que já existia: ele mantém o que estava gravado e mostra o que o
-  documento novo diz, para você decidir;
-- **o que foi inferido**: o que ele deduziu sozinho, sem você ter dito. Confira com atenção;
-- **as lacunas**: o que nem o currículo nem o formulário cobrem. Ele não inventa.
+**Passo 4: revisar e aplicar.** No fim, aparecem duas coisas:
+
+- **"Mudanças propostas pelo Claude":** cada arquivo do perfil que mudaria, com o que entra (em
+  verde) e o que sai (em vermelho). Abra cada um e confira. Depois:
+  - **Aplicar ao meu perfil** grava as mudanças;
+  - **Descartar a proposta** joga tudo fora, e o perfil fica como estava.
+- **"O relatório da última montagem":**
+  - o que foi proposto em cada arquivo;
+  - **os conflitos** com o perfil que já existia: ele mantém o que estava gravado e mostra o que o
+    documento novo diz, para você decidir;
+  - **o que foi inferido**: o que ele deduziu sozinho, sem você ter dito. Confira com atenção;
+  - **as lacunas**: o que nem o currículo nem o formulário cobrem. Ele não inventa.
 
 Logo abaixo, **"Seu perfil como está agora"** mostra o perfil gravado.
+
+Uma montagem nova sempre começa do zero: se havia uma proposta que você não aplicou, ela é
+substituída.
 
 > Pela conversa: escreva `/setup` no Claude. Ele faz as mesmas perguntas uma a uma e mostra os
 > conflitos para você decidir na hora.
@@ -232,6 +243,7 @@ Para mudar a situação depois de enviar, escreva na conversa com o Claude
 | "Ainda não há buscas no seu perfil" | Monte o perfil na aba **Meu perfil** (ou `/setup` na conversa) |
 | A avaliação abre com "⚠ O filtro de integridade não rodou" | Não confie no veredito de segurança dessa avaliação: rode de novo ou avalie pela conversa |
 | O botão "Montar meu perfil" está desligado | Falta enviar o currículo, ou marcar a confirmação de privacidade |
+| Montei o perfil, mas nada mudou | A montagem só propõe: role até "Mudanças propostas pelo Claude" e clique em **Aplicar ao meu perfil** |
 
 ---
 
@@ -248,7 +260,8 @@ vindos de outro endereço são recusados.
 |---|---|
 | Buscar vagas | `tools/scrape_run.py search` (as CLIs dos portais), sem o Claude |
 | Me interessa / Descartar | grava em `job_scraper/seen_jobs.json` |
-| Montar meu perfil | `claude -p`: o Caminho A do `/setup`, com o formulário no lugar das perguntas |
+| Montar meu perfil | `claude -p`: o Caminho A do `/setup`, com o formulário no lugar das perguntas; grava só a proposta |
+| Aplicar ao meu perfil / Descartar | o próprio painel copia a proposta para o lugar, ou a apaga, sem o Claude |
 | Avaliar com o Claude | `claude -p`: os Passos 0 e 1 do `/apply` |
 | Fazer currículo e carta | `claude -p`: os Passos 2 a 6b do `/apply`, a partir da avaliação gravada |
 
@@ -261,6 +274,7 @@ nem servidor externo. O pedido vai pela entrada padrão, nunca na linha de coman
 |---|---|---|
 | Currículo e LinkedIn enviados | `documents/cv/`, `documents/linkedin/` | Não |
 | Respostas do formulário | `documents/perfil/respostas.json` | Não |
+| Proposta de perfil, antes de aplicar | `documents/perfil/proposta/` (com `claude/` no lugar de `.claude/`) | Não |
 | Perfil montado | `CLAUDE.md`, `.claude/skills/job-application-assistant/0*.md`, `.claude/skills/job-scraper/search-queries.md`, `cv/main_example.tex` | **Sim** (por isso o aviso de privacidade) |
 | Resultado da busca | pasta temporária do sistema (`painel_busca_<data>.json`) | Não |
 | Vagas vistas e separadas | `job_scraper/seen_jobs.json` | Não |
@@ -277,7 +291,7 @@ um arquivo próprio para cada botão. O que não estiver liberado é negado.
 | Botão | Arquivo | Pode |
 |---|---|---|
 | Avaliar / Fazer currículo e carta | `tools/painel/claude-settings.json` | ler; pesquisar na web; gravar só o currículo, a carta, a pesquisa de empresas, `documents/applications/` e o tracker; compilar só pelo `tools/compile_doc.py`, que desliga a execução de comandos pelo LaTeX |
-| Montar meu perfil | `tools/painel/claude-settings-perfil.json` | ler; gravar só os arquivos de perfil. **Sem web e sem shell**: o currículo é lido, nunca buscado, e nada sai do computador |
+| Montar meu perfil | `tools/painel/claude-settings-perfil.json` | ler; gravar só em `documents/perfil/proposta/`, nunca no perfil. **Sem web e sem shell**: o currículo é lido, nunca buscado, e nada sai do computador. Quem grava o perfil é o painel, quando você clica em Aplicar |
 
 O `tools/security_guards.py` confere esses arquivos em todo PR. O [SECURITY.md](SECURITY.md)
 tem o modelo de ameaças completo.

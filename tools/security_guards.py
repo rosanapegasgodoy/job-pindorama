@@ -135,15 +135,14 @@ ALLOWED_PAINEL_PERMISSIONS = {
 }
 
 # The panel's "Meu perfil" run (/setup Path A from documents/ and the form).
-# It writes the profile files /setup writes, and has no web access and no shell:
-# a CV is read, never fetched, and nothing leaves the machine.
+# It only writes a proposal under documents/perfil/proposta/ (Edit rules cover
+# Write too); the panel shows the diff and copies it into place on the user's
+# click. No web access and no shell: a CV is read, never fetched, and nothing
+# leaves the machine.
 ALLOWED_PAINEL_PERFIL_PERMISSIONS = {
     "Read", "Glob", "Grep",
     "Skill(setup)", "Skill(job-application-assistant)",
-    "Write(CLAUDE.md)", "Edit(CLAUDE.md)",
-    "Write(.claude/skills/job-application-assistant/0*.md)", "Edit(.claude/skills/job-application-assistant/0*.md)",
-    "Write(.claude/skills/job-scraper/search-queries.md)", "Edit(.claude/skills/job-scraper/search-queries.md)",
-    "Write(cv/main_example.tex)", "Edit(cv/main_example.tex)",
+    "Edit(documents/perfil/proposta/**)",
 }
 
 PAINEL_SETTINGS = {

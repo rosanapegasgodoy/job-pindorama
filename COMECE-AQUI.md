@@ -100,9 +100,11 @@ aba **Meu perfil**, que faz o mesmo sem conversa:
    pastas `documents\cv` e `documents\linkedin`.
 2. **O que o currículo não diz:** um formulário curto (cidade, gênero gramatical, idiomas,
    cargos, níveis, modelo de trabalho, regimes, pretensão). Clique em "Salvar respostas".
-3. **Montar meu perfil com o Claude:** ele lê os documentos e as respostas e grava o perfil.
-   Leva alguns minutos. No fim, aparece o que ele gravou, o que deduziu sozinho e o que
-   ficou faltando.
+3. **Montar meu perfil com o Claude:** ele lê os documentos e as respostas e propõe o perfil.
+   Leva alguns minutos. No fim, aparecem as mudanças propostas (o que entra em verde, o que sai
+   em vermelho), o que ele deduziu sozinho e o que ficou faltando.
+4. **Aplicar ao meu perfil:** depois de conferir, clique para gravar. Se não gostou, **Descartar
+   a proposta** deixa tudo como estava.
 
 Se você já tem perfil, o botão vira "Atualizar meu perfil": ele acrescenta o que é novo,
 mantém o que já existe e lista as diferenças para você revisar. Confira sempre a lista

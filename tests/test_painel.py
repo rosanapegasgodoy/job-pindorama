@@ -100,6 +100,8 @@ class Data(unittest.TestCase):
         prompt = painel.claude_prompt(painel.PERFIL_KEY, "perfil", self.dir, answers, docs)
         self.assertIn("<FORMULARIO>\nNos textos em português, escrever no: neutro\nCargos a buscar, um por linha: PM; PO\n</FORMULARIO>", prompt)
         self.assertIn("/setup pelo Caminho A", prompt)
+        self.assertIn("Não grave nos arquivos do perfil", prompt)
+        self.assertIn("documents/perfil/proposta/claude/skills/job-application-assistant/01-candidate-profile.md", prompt)
 
     def test_claude_answer_files_are_named_by_hash_inside_the_folder(self):
         f = painel.claude_file("https://x/../../etc", "avaliar", self.dir)
@@ -129,8 +131,12 @@ class Server(unittest.TestCase):
         cls.port = cls.server.server_address[1]
         tmp = Path(cls.tmp.name)
         cls.documents = tmp / "documents"
+        cls.profile_root = tmp / "repo"
+        (cls.profile_root / "cv").mkdir(parents=True)
+        (cls.profile_root / "cv" / "main_example.tex").write_text("velho\n", encoding="utf-8")
         claude = painel.ClaudeJob(tmp / "claude", claude_bin="claude-que-nao-roda",
-                                  documents=cls.documents, answers=tmp / "respostas.json")
+                                  documents=cls.documents, answers=tmp / "respostas.json",
+                                  staging=tmp / "proposta", profile_root=cls.profile_root)
         # Sem rede nos testes: a checagem de privacidade de verdade chama o `gh`, que no CI
         # pode demorar mais que o tempo de resposta que o teste espera.
         cls.server.RequestHandlerClass = painel.make_handler(cls.token, job, {f"127.0.0.1:{cls.port}"}, claude,
@@ -196,6 +202,19 @@ class Server(unittest.TestCase):
         self.assertEqual(profile["answers"], {"genero": "neutro"})
         self.assertEqual([f["name"] for f in profile["files"]["cv"]], ["cv.pdf"])
         self.assertEqual(profile["privacy"], {"status": "local", "repo": None})
+
+    def test_profile_proposal_is_applied_only_on_request(self):
+        h = {"X-Painel-Token": self.token, "Content-Type": "application/json"}
+        staged = Path(self.tmp.name) / "proposta" / "cv" / "main_example.tex"
+        staged.parent.mkdir(parents=True)
+        staged.write_text("novo\n", encoding="utf-8")
+        files = json.loads(self.request("GET", "/api/profile")[1])["proposal"]["files"]
+        self.assertEqual([(f["path"], f["added"], f["removed"]) for f in files], [("cv/main_example.tex", 1, 1)])
+        self.assertEqual(self.request("POST", "/api/profile-apply", {})[0], 403)
+        self.assertEqual(self.request("POST", "/api/profile-apply", {"paths": "tudo"}, h)[0], 400)
+        status, data, _ = self.request("POST", "/api/profile-apply", {}, h)
+        self.assertEqual((status, json.loads(data)["applied"]), (200, ["cv/main_example.tex"]))
+        self.assertEqual((self.profile_root / "cv" / "main_example.tex").read_text(encoding="utf-8"), "novo\n")
 
     def test_only_uploads_get_the_big_body_limit(self):
         self.assertEqual(painel.body_limit("/api/upload"), painel.MAX_UPLOAD_BODY)

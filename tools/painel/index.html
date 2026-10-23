@@ -19,6 +19,7 @@
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; background: var(--bg); color: var(--text);
          font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   header { padding: 20px 16px 0; max-width: 980px; margin: 0 auto; }
@@ -83,6 +84,11 @@
   form.perfil .help { color: var(--muted); font-size: .85rem; margin-top: 2px; }
   ul.files { margin: 8px 0 0; padding-left: 18px; }
   ul.files li { margin-bottom: 4px; overflow-wrap: anywhere; }
+  pre.diff { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--chip); padding: 8px 10px; border-radius: 8px;
+             font-size: .82rem; line-height: 1.45; max-height: 28em; overflow-y: auto; margin: 6px 0 0; }
+  pre.diff .add { display: block; color: var(--accent); }
+  pre.diff .del { display: block; color: var(--danger); }
+  pre.diff .hunk { display: block; color: var(--muted); }
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 </style>
 </head>
@@ -122,8 +128,9 @@
     </div>
     <div class="panel">
       <h2>3. Montar o perfil</h2>
-      <p>O Claude lê os seus documentos e as respostas e monta o perfil que a busca, a avaliação e o currículo usam.
-        Leva alguns minutos. Se você já tem um perfil, ele acrescenta o que é novo, mantém o que já existe e lista as diferenças para você revisar.</p>
+      <p>O Claude lê os seus documentos e as respostas e propõe o perfil que a busca, a avaliação e o currículo usam.
+        Leva alguns minutos. Nada muda até você revisar a proposta e clicar em <strong>Aplicar</strong>.
+        Se você já tem um perfil, ele acrescenta o que é novo, mantém o que já existe e lista as diferenças.</p>
       <label id="confirm-box" hidden><input type="checkbox" id="confirm-public"> Entendi o aviso de privacidade e quero continuar</label>
       <p><button class="btn" id="btn-perfil">Montar meu perfil com o Claude</button></p>
       <p id="perfil-status" class="claude-status" aria-live="polite"></p>
@@ -466,10 +473,46 @@ async function loadProfile(refresh) {
   renderPerfilStatus();
   const out = document.getElementById("perfil-out");
   out.replaceChildren(
+    renderProposal(),
     perfil.report ? el("div", { class: "panel" }, el("details", { class: "answer", open: "" },
-      el("summary", { text: "O que o Claude fez na última montagem" }), markdown(perfil.report))) : null,
+      el("summary", { text: "O relatório da última montagem" }), markdown(perfil.report))) : null,
     perfil.ready && perfil.profile ? el("div", { class: "panel" }, el("details", { class: "answer" },
       el("summary", { text: "Seu perfil como está agora" }), markdown(perfil.profile.replace(/^---[\s\S]*?---\s*/, "")))) : null);
+}
+
+const ARQUIVOS = { "CLAUDE.md": "Perfil principal", ".claude/skills/job-scraper/search-queries.md": "Buscas de vagas",
+  "cv/main_example.tex": "Currículo base" };
+const METODO = { "01": "Perfil detalhado", "02": "Perfil comportamental", "03": "Estilo de escrita", "04": "Método de avaliação",
+  "05": "Modelos de currículo", "06": "Modelos de carta", "07": "Preparação para entrevistas", "08": "Campos de formulário",
+  "09": "Pesquisa na web" };
+function arquivo(path) {
+  const n = (path.match(/job-application-assistant\/(0\d)-/) || [])[1];
+  return ARQUIVOS[path] || METODO[n] || path;
+}
+function renderProposal() {
+  const files = (perfil.proposal && perfil.proposal.files) || [];
+  if (!files.length) return null;
+  const running = claude.running && claude.step === "perfil";
+  const diffView = (f) => el("pre", { class: "diff" }, ...f.diff.map((l) =>
+    el("span", { class: l.startsWith("+") ? "add" : l.startsWith("-") ? "del" : l.startsWith("@@") ? "hunk" : "", text: l || " " })),
+    f.truncated ? el("span", { class: "hunk", text: "… (mudança longa: o resto aparece depois de aplicar)" }) : null);
+  const act = async (path, body, msg) => {
+    try { const r = await api(path, body); alert(msg(r)); await loadProfile(); }
+    catch (e) { alert("Não consegui: " + e.message); }
+  };
+  return el("div", { class: "panel" },
+    el("h2", { text: "Mudanças propostas pelo Claude" }),
+    el("p", { text: "Confira cada arquivo: verde é o que entra, vermelho é o que sai. Nada foi gravado no seu perfil ainda." }),
+    ...files.map((f) => el("details", { class: "answer" },
+      el("summary", { text: `${arquivo(f.path)} (${f.path})${f.new_file ? ", arquivo novo" : ""}: +${f.added} −${f.removed}` }),
+      diffView(f))),
+    el("div", { class: "actions", style: "margin-top: 12px" },
+      el("button", { class: "btn", text: "Aplicar ao meu perfil", ...(running ? { disabled: "" } : {}),
+        onclick: () => confirm("Gravar estas mudanças no seu perfil?") &&
+          act("/api/profile-apply", {}, (r) => `Perfil atualizado: ${r.applied.length} arquivo(s).`) }),
+      el("button", { class: "btn secondary", text: "Descartar a proposta", ...(running ? { disabled: "" } : {}),
+        onclick: () => confirm("Descartar a proposta? O seu perfil fica como está.") &&
+          act("/api/profile-discard", {}, () => "Proposta descartada. O seu perfil não mudou.") })));
 }
 
 function renderPrivacy() {
