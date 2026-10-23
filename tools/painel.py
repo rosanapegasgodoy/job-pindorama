@@ -391,7 +391,8 @@ class ClaudeJob:
 # HTTP
 # ---------------------------------------------------------------------------
 
-def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJob | None = None):
+def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJob | None = None,
+                 privacy_check=painel_perfil.privacy):
     claude = claude or ClaudeJob()
     privacy_cache: dict = {}
 
@@ -438,7 +439,7 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 return self._send(200, {"applications": applications()})
             if path == "/api/profile":
                 if "refresh" in self.path or not privacy_cache:
-                    privacy_cache.update(painel_perfil.privacy())
+                    privacy_cache.update(privacy_check())
                 return self._send(200, {
                     "schema": [{"title": t, "fields": f} for t, f in painel_perfil.SCHEMA],
                     "answers": painel_perfil.load_answers(claude.answers),
@@ -508,7 +509,7 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                     # O perfil vai para arquivos rastreados pelo git: num repositório
                     # público (ou que não deu para conferir), só com a confirmação.
                     if not privacy_cache:
-                        privacy_cache.update(painel_perfil.privacy())
+                        privacy_cache.update(privacy_check())
                     if painel_perfil.needs_confirmation(privacy_cache) and body.get("confirm") is not True:
                         return self._send(400, {"error": "confirme o aviso de privacidade antes de montar o perfil"})
                     url = PERFIL_KEY

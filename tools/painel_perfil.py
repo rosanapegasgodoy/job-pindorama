@@ -14,6 +14,7 @@ Funções puras, testadas sem servidor; quem chama o Claude é o painel.
 
 import base64
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -199,8 +200,9 @@ def privacy(root: Path = ROOT) -> dict:
     if not gh:
         return {"status": "desconhecido", "repo": repo}
     try:
+        # Curto: a página espera por isto, e um gh lento ou sem login vira "desconhecido".
         proc = subprocess.run([gh, "repo", "view", repo, "--json", "visibility"], capture_output=True,
-                              text=True, timeout=20)
+                              text=True, timeout=8, env={**os.environ, "GH_PROMPT_DISABLED": "1"})
         visibility = json.loads(proc.stdout).get("visibility") if proc.returncode == 0 else None
     except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
         visibility = None

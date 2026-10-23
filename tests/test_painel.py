@@ -131,7 +131,10 @@ class Server(unittest.TestCase):
         cls.documents = tmp / "documents"
         claude = painel.ClaudeJob(tmp / "claude", claude_bin="claude-que-nao-roda",
                                   documents=cls.documents, answers=tmp / "respostas.json")
-        cls.server.RequestHandlerClass = painel.make_handler(cls.token, job, {f"127.0.0.1:{cls.port}"}, claude)
+        # Sem rede nos testes: a checagem de privacidade de verdade chama o `gh`, que no CI
+        # pode demorar mais que o tempo de resposta que o teste espera.
+        cls.server.RequestHandlerClass = painel.make_handler(cls.token, job, {f"127.0.0.1:{cls.port}"}, claude,
+                                                             privacy_check=lambda: {"status": "local", "repo": None})
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
 
     @classmethod
@@ -192,7 +195,7 @@ class Server(unittest.TestCase):
         profile = json.loads(data)
         self.assertEqual(profile["answers"], {"genero": "neutro"})
         self.assertEqual([f["name"] for f in profile["files"]["cv"]], ["cv.pdf"])
-        self.assertIn("status", profile["privacy"])
+        self.assertEqual(profile["privacy"], {"status": "local", "repo": None})
 
     def test_only_uploads_get_the_big_body_limit(self):
         self.assertEqual(painel.body_limit("/api/upload"), painel.MAX_UPLOAD_BODY)
