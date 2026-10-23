@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Painel local da busca de vagas: a parte mecânica do /scrape em botões.
+"""Painel local da busca de vagas: o fluxo do projeto em botões.
 
 Para quem não usa terminal nem conversa com o Claude: um servidor pequeno, só no
 próprio computador (127.0.0.1), abre uma página no navegador com
 
+  * Meu perfil    - documentos, formulário e o /setup sem conversa (o lado de
+                    dados está em tools/painel_perfil.py);
   * Buscar vagas  - roda `tools/scrape_run.py search` nas prioridades escolhidas;
   * Vagas novas   - a lista, com filtros, avisos do posting_signals e link;
                     "Me interessa" grava encaixe médio e "Descartar" grava baixo
@@ -27,6 +29,8 @@ página, que todo pedido de escrita precisa mandar; pedidos com Host de outro
 nome são recusados (contra DNS rebinding). As vagas são dados de terceiros: a
 página as mostra como texto, nunca como HTML, e o arquivo da busca fica fora do
 repositório (pasta temporária), como no scrape_run.
+
+O fluxo inteiro, aba por aba, para quem usa: PAINEL.md.
 
 Uso:
   python3 tools/painel.py [--port 8765] [--no-browser]

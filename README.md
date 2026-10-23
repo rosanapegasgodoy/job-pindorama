@@ -61,6 +61,10 @@ O projeto incorpora boas práticas de orientação de carreira: critérios de av
 
 > **Nunca usou terminal nem GitHub?** Siga o [COMECE-AQUI.md](COMECE-AQUI.md): você instala
 > dois programas com cliques e pede o resto ao Claude, em português.
+>
+> **Prefere botões a comandos?** O painel local faz o caminho inteiro (perfil, busca, triagem,
+> avaliação, currículo e carta) sem você escrever nada. O [PAINEL.md](PAINEL.md) mostra o fluxo
+> aba por aba.
 
 ### 1. Fork e clone
 
@@ -106,7 +110,8 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 > abre um painel local no navegador: busca, lista com filtros e avisos, "me interessa" e
 > "descartar" gravados no histórico, e as candidaturas. A busca é a parte mecânica do `/scrape`,
 > sem o Claude. Na aba "Me interessam", dois botões chamam o Claude Code sem conversa para
-> avaliar a vaga e para fazer currículo e carta (veja [O `/apply` pelo painel](#o-apply-pelo-painel)).
+> avaliar a vaga e para fazer currículo e carta (veja [O `/apply` pelo painel](#o-apply-pelo-painel)
+> e o fluxo completo no [PAINEL.md](PAINEL.md)).
 
 ```bash
 /scrape
@@ -215,12 +220,13 @@ job-pindorama/
 ├── .github/workflows/ci.yml           # CI: compilações LaTeX, lint das skills, tipagem das CLIs
 ├── salary_lookup.py                   # Referência salarial (com os seus dados)
 ├── tools/                             # Ferramentas de apoio (verificação de PDF, filtro de vagas, ...)
-├── abrir-painel.bat                   # Painel local da busca (Windows, dois cliques)
+├── abrir-painel.bat                   # Painel local (Windows, dois cliques; veja PAINEL.md)
 ├── job_scraper/                       # Estado da busca (vagas vistas, resultados)
 ├── gmail_sync/                        # Estado do /gmail-sync
 ├── upskill/                           # Relatórios do /upskill
 ├── job_search_tracker.csv             # Planilha de acompanhamento das candidaturas
 ├── COMECE-AQUI.md                     # Instalação sem terminal (cliques + pedidos ao Claude)
+├── PAINEL.md                          # O painel local: o fluxo inteiro em botões
 └── SETUP.md                           # Guia de instalação detalhado
 ```
 

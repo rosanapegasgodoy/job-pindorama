@@ -15,6 +15,14 @@ per-file diff commands.
 
 ### Added
 
+- **`PAINEL.md`, the panel's whole flow in one guide** - the panel had grown from a search page into
+  profile, search, triage, evaluation and drafting, but its documentation was split across the
+  README, `COMECE-AQUI.md` and `SECURITY.md`. The guide walks through every tab in order with a
+  flow diagram, what each warning and verdict means, when the unattended Claude stops instead of
+  deciding, a troubleshooting table, and, at the end, what runs behind each button, where every
+  file lands (and which ones git tracks) and what each panel run may do. Linked from the README,
+  `COMECE-AQUI.md` and `tools/painel.py`.
+
 - **The local panel runs `/apply` from buttons** (`tools/painel.py`, `tools/painel/index.html`,
   `tools/painel/claude-settings.json`, `tests/test_painel.py`) - the "Me interessam" tab gets
   "Avaliar com o Claude" (Steps 0-1) and "Fazer currículo e carta" (Steps 2-6b, from the saved

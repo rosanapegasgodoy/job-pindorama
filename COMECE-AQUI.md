@@ -130,7 +130,6 @@ endereço que aparece na janela preta (`http://127.0.0.1:8765/`) e cole no naveg
 
 - **Meu perfil:** os seus documentos, o formulário e o botão que monta o perfil (veja o
   Passo 6). Enquanto o perfil não existe, o painel abre nesta aba.
-
 - **Buscar:** escolha as prioridades e clique em "Buscar vagas" (leva de 1 a 3 minutos).
 - **Vagas novas:** filtre por modelo de trabalho e portal, veja os avisos e abra cada vaga.
   "Me interessa" guarda a vaga; "Descartar" tira da lista. As duas somem das próximas buscas.
@@ -147,6 +146,9 @@ endereço que aparece na janela preta (`http://127.0.0.1:8765/`) e cole no naveg
 O Claude trabalha numa vaga por vez e usa o seu plano, como numa conversa. Pelo painel ele não
 pode perguntar nada: se a vaga tiver algo estranho, ele para e avisa, e você decide na conversa.
 **Confira sempre o currículo e a carta antes de enviar.**
+
+O [PAINEL.md](PAINEL.md) explica o fluxo inteiro aba por aba, o que cada aviso quer dizer e o
+que fazer quando algo não funciona.
 
 Para fechar o painel, feche a janela preta. O painel só funciona no seu computador. Além das
 buscas nos portais, só o Claude sai para a internet, para ler a vaga e pesquisar a empresa.
