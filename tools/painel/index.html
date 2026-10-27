@@ -4,113 +4,244 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="painel-token" content="__PAINEL_TOKEN__">
+<script>
+  // O tema antes de desenhar a página, para não piscar: o escolhido no navegador, senão o claro.
+  try { document.documentElement.dataset.theme = localStorage.getItem("painel-tema") || "claro"; }
+  catch { document.documentElement.dataset.theme = "claro"; }
+</script>
 <title>Minha Busca</title>
 <style>
+  /* Identidade "Pindorama": verde-palmeira para agir, ocre de sol para o meio-termo, papel quente
+     de fundo. O verde sólido é só da ação principal; o resto usa as versões suaves. Contraste AA
+     nos dois temas. */
   :root {
-    --bg: #f6f5f1; --surface: #ffffff; --text: #1f2328; --muted: #5d636b; --line: #dedbd2;
-    --accent: #1d6b52; --accent-text: #ffffff; --warn-bg: #fff4d6; --warn-text: #6b4a00;
-    --chip: #eceae3; --danger: #9b2c2c; --focus: #2f6fd6;
+    --bg: #f5f3ec; --surface: #fffefb; --surface-2: #f0ece2; --text: #1b2420; --muted: #56615b; --line: #e2ddd0;
+    --accent: #146c4f; --accent-hover: #0f5a41; --accent-soft: #e1f0e8; --accent-text: #ffffff;
+    --sun: #8a5300; --sun-soft: #fbedd3; --danger: #a12d2d; --focus: #2357c7;
+    --shadow: 0 1px 2px rgba(27, 36, 32, .05), 0 1px 1px rgba(27, 36, 32, .03);
+    --radius: 12px; --radius-sm: 8px;
+    color-scheme: light;
+  }
+  /* O claro é o padrão. O escuro vale quando a pessoa escolhe "Escuro", ou "Automático" num
+     sistema em modo escuro (o seletor fica no cabeçalho e a escolha, no navegador). */
+  :root[data-theme="escuro"] {
+    --bg: #101412; --surface: #181e1b; --surface-2: #222a26; --text: #e7ece8; --muted: #a2aca6; --line: #2b3430;
+    --accent: #47c08f; --accent-hover: #63d3a4; --accent-soft: #1b3328; --accent-text: #07140e;
+    --sun: #f0c27a; --sun-soft: #3a2c14; --danger: #f09494; --focus: #8fb2ff;
+    --shadow: none;
+    color-scheme: dark;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #16181b; --surface: #1f2226; --text: #e8e6e1; --muted: #a3a8ae; --line: #33373c;
-      --accent: #4fb38f; --accent-text: #0e1a15; --warn-bg: #3a3016; --warn-text: #f1d88c;
-      --chip: #2a2e33; --danger: #e08b8b; --focus: #7aa7f0;
+    :root[data-theme="auto"] {
+      --bg: #101412; --surface: #181e1b; --surface-2: #222a26; --text: #e7ece8; --muted: #a2aca6; --line: #2b3430;
+      --accent: #47c08f; --accent-hover: #63d3a4; --accent-soft: #1b3328; --accent-text: #07140e;
+      --sun: #f0c27a; --sun-soft: #3a2c14; --danger: #f09494; --focus: #8fb2ff;
+      --shadow: none;
+      color-scheme: dark;
     }
   }
+  .theme { margin-left: auto; display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+  .theme button { background: none; border: 0; border-radius: 999px; padding: 4px 10px; font: inherit; font-size: .82rem;
+                  color: var(--muted); cursor: pointer; min-height: 30px; }
+  .theme button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: 650; }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   body { margin: 0; background: var(--bg); color: var(--text);
-         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { padding: 20px 16px 0; max-width: 980px; margin: 0 auto; }
-  h1 { font-size: 1.6rem; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 16px; }
-  nav { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
-  nav button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px;
-               font: inherit; color: var(--muted); cursor: pointer; }
-  nav button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
-  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+         -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { letter-spacing: -.01em; line-height: 1.25; }
+  h2 { font-size: 1.2rem; margin: 0 0 8px; }
+  a { color: var(--accent); }
+  .skip { position: absolute; left: 12px; top: -48px; background: var(--accent); color: var(--accent-text); padding: 8px 14px;
+          border-radius: var(--radius-sm); font-weight: 600; z-index: 10; }
+  .skip:focus { top: 12px; }
+
+  /* Cabeçalho: marca e abas ficam presas no topo, para trocar de aba sem rolar de volta. */
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 980px; margin: 0 auto; padding: 14px 16px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand svg { flex: none; }
+  h1 { font-size: 1.35rem; margin: 0; }
+  .sub { color: var(--muted); margin: 2px 0 10px; font-size: .92rem; }
+  nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; }
+  nav::-webkit-scrollbar { display: none; }
+  nav button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 12px; white-space: nowrap;
+               font: inherit; font-size: .95rem; color: var(--muted); cursor: pointer; border-radius: 6px 6px 0 0; }
+  nav button:hover { color: var(--text); background: var(--surface-2); }
+  nav button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 650; }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 48px; }
+  main [id], main details { scroll-margin-top: 150px; }  /* o cabeçalho preso não cobre o que a página rolou até */
+  main:focus { outline: none; }
   section[hidden] { display: none; }
-  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-  .btn { background: var(--accent); color: var(--accent-text); border: 0; border-radius: 8px; padding: 10px 18px;
-         font: inherit; font-weight: 600; cursor: pointer; }
-  .btn.secondary { background: var(--chip); color: var(--text); }
-  .btn.small { padding: 6px 12px; font-size: .9rem; }
-  .btn:disabled { opacity: .5; cursor: default; }
-  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px;
+           margin-bottom: 16px; box-shadow: var(--shadow); }
+  .panel > :first-child { margin-top: 0; }
+  .panel > :last-child { margin-bottom: 0; }
+
+  /* Botões: um sólido (a ação principal), um neutro e um discreto. Alvo de pelo menos 36px. */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px;
+         background: var(--accent); color: var(--accent-text); border: 1px solid transparent; border-radius: var(--radius-sm);
+         padding: 8px 18px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+  .btn:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn.secondary { background: var(--surface-2); color: var(--text); border-color: var(--line); }
+  .btn.secondary:hover:not(:disabled) { background: var(--line); }
+  .btn.ghost { background: none; color: var(--muted); border-color: var(--line); font-weight: 500; }
+  .btn.ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); background: none; }
+  .btn.small { min-height: 36px; padding: 6px 12px; font-size: .9rem; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+  summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
   .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   label { display: inline-flex; gap: 6px; align-items: center; }
-  input[type=text], select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
-                             background: var(--surface); color: var(--text); }
+  input[type=text], input[type=number], select { font: inherit; padding: 8px 10px; border: 1px solid var(--line);
+    border-radius: var(--radius-sm); background: var(--surface); color: var(--text); min-height: 40px; }
   input[type=text] { flex: 1 1 220px; min-width: 0; }
+  input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 1.05em; height: 1.05em; }
   .muted { color: var(--muted); }
-  pre.summary { white-space: pre-wrap; background: var(--chip); padding: 12px; border-radius: 8px; font-size: .85rem; overflow-x: auto; }
+  pre.summary { white-space: pre-wrap; background: var(--surface-2); padding: 12px; border-radius: var(--radius-sm); font-size: .85rem; overflow-x: auto; }
   .error { color: var(--danger); white-space: pre-wrap; }
+
+  /* Cartões de vaga e de candidatura. */
   .cards { display: grid; gap: 12px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
-  .card h3 { margin: 0 0 2px; font-size: 1.1rem; overflow-wrap: anywhere; }
-  .card .company { color: var(--muted); margin: 0 0 8px; overflow-wrap: anywhere; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-  .chip { background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: .85rem; }
-  .warn { background: var(--warn-bg); color: var(--warn-text); border-radius: 8px; padding: 8px 10px; font-size: .9rem; margin-bottom: 8px; overflow-wrap: anywhere; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px;
+          box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 2px; font-size: 1.08rem; overflow-wrap: anywhere; }
+  .card .company { color: var(--muted); margin: 0 0 8px; overflow-wrap: anywhere; font-size: .95rem; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .chip { background: var(--surface-2); color: var(--muted); border-radius: 999px; padding: 2px 10px; font-size: .82rem; }
+  .warn { background: var(--sun-soft); color: var(--sun); border-radius: var(--radius-sm); padding: 8px 12px; font-size: .9rem;
+          margin-bottom: 10px; overflow-wrap: anywhere; }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .actions a { color: var(--accent); font-weight: 600; }
-  .empty { text-align: center; padding: 32px 16px; color: var(--muted); }
+  .links { display: flex; gap: 14px; flex-wrap: wrap; margin-left: auto; font-size: .9rem; }
+  .actions .links a { color: var(--muted); font-weight: 500; text-underline-offset: 3px; }
+  .actions .links a:hover { color: var(--accent); }
+  .fit { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: .8rem; font-weight: 700; margin-bottom: 8px;
+         font-variant-numeric: tabular-nums; }
+  .fit-alto { background: var(--accent-soft); color: var(--accent); }
+  .fit-medio { background: var(--sun-soft); color: var(--sun); }
+  .fit-baixo { background: var(--surface-2); color: var(--muted); }
+  .motivo { margin: 0 0 10px; font-size: .92rem; color: var(--muted); overflow-wrap: anywhere; }
+  .steps { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 12px; font-size: .85rem; color: var(--muted); }
+  .steps .done { color: var(--accent); font-weight: 600; }
+  .steps .now { color: var(--text); font-weight: 700; }
+
+  /* Estados vazios: dizem o que falta e oferecem o próximo passo. */
+  .empty { text-align: center; padding: 36px 20px; color: var(--muted); background: var(--surface); border: 1px dashed var(--line);
+           border-radius: var(--radius); }
+  .empty strong { display: block; color: var(--text); font-size: 1.05rem; margin-bottom: 4px; }
+  .empty p { margin: 0 auto 14px; max-width: 46ch; }
+
+  /* Início. */
+  .next { border-left: 4px solid var(--accent); }
+  .next .eyebrow { margin: 0 0 4px; color: var(--accent); font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .next h2 { margin: 0 0 4px; font-size: 1.3rem; }
+  .next p { margin: 0 0 14px; }
+  .stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px;
+          text-align: left; font: inherit; color: var(--text); cursor: pointer; box-shadow: var(--shadow); }
+  .stat:hover { border-color: var(--accent); }
+  .stat .num { display: block; font-size: 2rem; font-weight: 750; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat .label { display: block; font-weight: 650; margin-top: 2px; }
+  .stat .detail { display: block; color: var(--muted); font-size: .88rem; margin-top: 4px; }
+
+  details.search > summary, details.edit > summary { cursor: pointer; list-style: none; }
+  details.search > summary::-webkit-details-marker, details.edit > summary::-webkit-details-marker { display: none; }
+  details.search > summary::before, details.edit > summary::before { content: "▸"; display: inline-block; width: 1.1em; color: var(--muted); }
+  details.search[open] > summary::before, details.edit[open] > summary::before { content: "▾"; }
+  details.search[open] > summary { margin-bottom: 10px; }
+  dl.resumo { display: grid; grid-template-columns: minmax(120px, 200px) 1fr; gap: 8px 16px; margin: 12px 0 16px; }
+  dl.resumo dt { color: var(--muted); }
+  dl.resumo dd { margin: 0; overflow-wrap: anywhere; }
+  @media (max-width: 560px) { dl.resumo { grid-template-columns: 1fr; gap: 0; } dl.resumo dd { margin-bottom: 8px; } }
+
   table { width: 100%; border-collapse: collapse; font-size: .95rem; }
   th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
   .tablewrap { overflow-x: auto; }
-  .spinner { display: inline-block; width: 1em; height: 1em; border: 3px solid var(--chip); border-top-color: var(--accent);
+  .spinner { display: inline-block; width: 1em; height: 1em; border: 3px solid var(--surface-2); border-top-color: var(--accent);
              border-radius: 50%; animation: spin 1s linear infinite; vertical-align: -0.15em; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  details.answer { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+  details.answer { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
   details.answer summary { cursor: pointer; font-weight: 600; }
   .md p, .md li { overflow-wrap: anywhere; }
   .md td, .md th { overflow-wrap: break-word; }
   .md blockquote { margin: 8px 0; padding: 4px 12px; border-left: 3px solid var(--line); color: var(--muted); }
   .md h2, .md h3, .md h4 { font-size: 1.05rem; margin: 14px 0 4px; }
   .md p, .md ul { margin: 6px 0; }
-  .md code { background: var(--chip); border-radius: 4px; padding: 0 4px; font-size: .9em; }
+  .md code { background: var(--surface-2); border-radius: 4px; padding: 0 4px; font-size: .9em; }
   .md table { margin: 8px 0; }
   .claude-status { margin: 8px 0 0; font-size: .95rem; }
   .ok { color: var(--accent); }
-  form.perfil fieldset { border: 0; padding: 0; margin: 0 0 16px; }
-  form.perfil legend { font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; padding: 0; }
-  form.perfil .field { margin-bottom: 12px; display: block; }
+
+  form.perfil fieldset { border: 0; padding: 0; margin: 0 0 20px; }
+  form.perfil legend { font-weight: 700; font-size: 1.05rem; margin-bottom: 10px; padding: 0; }
+  form.perfil .field { margin-bottom: 14px; display: block; }
   form.perfil .field > span { display: block; font-weight: 600; margin-bottom: 4px; }
-  form.perfil input[type=text], form.perfil textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line);
-    border-radius: 8px; background: var(--surface); color: var(--text); }
+  form.perfil input[type=text], form.perfil input[type=number], form.perfil textarea { width: 100%; font: inherit; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
   form.perfil textarea { min-height: 4.5em; resize: vertical; }
-  form.perfil .opts { display: flex; gap: 6px 14px; flex-wrap: wrap; }
-  form.perfil .help { color: var(--muted); font-size: .85rem; margin-top: 2px; }
-  form.perfil .field.sugerido { border-left: 3px solid var(--accent); padding-left: 10px; }
-  form.perfil .origem { color: var(--accent); font-size: .85rem; font-weight: 600; margin-top: 2px; }
+  form.perfil .opts { display: flex; gap: 8px 16px; flex-wrap: wrap; }
+  form.perfil .help { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  form.perfil .field.sugerido { border-left: 3px solid var(--accent); padding-left: 12px; }
+  form.perfil .origem { color: var(--accent); font-size: .85rem; font-weight: 600; margin-top: 4px; }
   ul.files { margin: 8px 0 0; padding-left: 18px; }
   ul.files li { margin-bottom: 4px; overflow-wrap: anywhere; }
-  pre.diff { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--chip); padding: 8px 10px; border-radius: 8px;
+  pre.diff { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); padding: 8px 10px; border-radius: var(--radius-sm);
              font-size: .82rem; line-height: 1.45; max-height: 28em; overflow-y: auto; margin: 6px 0 0; }
   pre.diff .add { display: block; color: var(--accent); }
   pre.diff .del { display: block; color: var(--danger); }
   pre.diff .hunk { display: block; color: var(--muted); }
+
+  @media (max-width: 560px) {
+    .panel, .card { padding: 14px 16px; }
+    .links { margin-left: 0; width: 100%; }
+    .sub { display: none; }
+  }
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
 <header>
-  <h1>Minha Busca</h1>
-  <p class="sub">Busque vagas nos portais, separe as que interessam e acompanhe as candidaturas. Tudo fica no seu computador.</p>
-  <nav role="tablist" aria-label="Seções">
-    <button role="tab" data-tab="perfil" aria-selected="false">Meu perfil</button>
-    <button role="tab" data-tab="buscar" aria-selected="true">Buscar</button>
-    <button role="tab" data-tab="vagas" aria-selected="false">Vagas novas <span id="count-new"></span></button>
-    <button role="tab" data-tab="interesse" aria-selected="false">Me interessam</button>
-    <button role="tab" data-tab="candidaturas" aria-selected="false">Candidaturas</button>
-    <button role="tab" data-tab="cltpj" aria-selected="false">CLT × PJ</button>
-  </nav>
+  <div class="bar">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect width="32" height="32" rx="8" fill="var(--accent)"/>
+        <circle cx="22" cy="10" r="3.2" fill="var(--sun-soft)"/>
+        <path d="M16 27V15M16 15c-3.5-4.5-8-4.8-10-3.2 3.6.2 6.6 1.4 10 3.2Zm0 0c3-4 7-4.6 9.5-3-3.4.3-6.5 1.2-9.5 3Zm0 0c-1.6-3.6-.6-7 1.6-8.6-.4 2.9-.8 5.6-1.6 8.6Z"
+              stroke="var(--accent-text)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <h1>Minha Busca</h1>
+      <div class="theme" role="group" aria-label="Tema">
+        <button type="button" data-theme="claro" aria-pressed="false">Claro</button>
+        <button type="button" data-theme="escuro" aria-pressed="false">Escuro</button>
+        <button type="button" data-theme="auto" aria-pressed="false" title="Segue o modo claro ou escuro do sistema">Automático</button>
+      </div>
+    </div>
+    <p class="sub">Busque vagas nos portais, separe as que interessam e acompanhe as candidaturas. Tudo fica no seu computador.</p>
+    <nav role="tablist" aria-label="Seções">
+      <button role="tab" id="t-inicio" aria-controls="tab-inicio" data-tab="inicio" aria-selected="true">Início</button>
+      <button role="tab" id="t-perfil" aria-controls="tab-perfil" data-tab="perfil" aria-selected="false" tabindex="-1">Meu perfil</button>
+      <button role="tab" id="t-vagas" aria-controls="tab-vagas" data-tab="vagas" aria-selected="false" tabindex="-1">Vagas novas <span id="count-new"></span></button>
+      <button role="tab" id="t-interesse" aria-controls="tab-interesse" data-tab="interesse" aria-selected="false" tabindex="-1">Me interessam</button>
+      <button role="tab" id="t-candidaturas" aria-controls="tab-candidaturas" data-tab="candidaturas" aria-selected="false" tabindex="-1">Candidaturas</button>
+      <button role="tab" id="t-cltpj" aria-controls="tab-cltpj" data-tab="cltpj" aria-selected="false" tabindex="-1">CLT × PJ</button>
+    </nav>
+  </div>
 </header>
 
-<main>
-  <section id="tab-perfil" role="tabpanel" hidden>
+<main id="main" tabindex="-1">
+  <section id="tab-inicio" role="tabpanel" aria-labelledby="t-inicio">
+    <div class="panel next" id="next-step" aria-live="polite"></div>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section id="tab-perfil" role="tabpanel" aria-labelledby="t-perfil" hidden>
     <div id="privacy"></div>
+    <div id="perfil-resumo"></div>
+    <details id="perfil-edit" class="edit">
+    <summary class="panel"><strong>Documentos, respostas e montagem do perfil</strong></summary>
     <div class="panel">
       <h2>1. Seus documentos</h2>
       <p class="muted">O currículo e, se tiver, o perfil do LinkedIn salvo em PDF (no LinkedIn: seu perfil &gt; Mais &gt; Salvar como PDF).
@@ -141,12 +272,13 @@
       <p><button class="btn" id="btn-perfil">Montar meu perfil com o Claude</button></p>
       <p id="perfil-status" class="claude-status" aria-live="polite"></p>
     </div>
+    </details>
     <div id="perfil-out"></div>
   </section>
 
-  <section id="tab-buscar" role="tabpanel">
-    <div class="panel">
-      <h2>Buscar vagas</h2>
+  <section id="tab-vagas" role="tabpanel" aria-labelledby="t-vagas" hidden>
+    <details class="panel search" id="search-box">
+      <summary><strong>Nova busca</strong> <span class="muted" id="search-when"></span></summary>
       <p class="muted">As buscas vêm do seu perfil (as linhas que o <code>/setup</code> preparou). A busca leva de 1 a 3 minutos.</p>
       <div id="prio-box" class="row"></div>
       <p class="row">
@@ -157,12 +289,20 @@
       <button class="btn" id="btn-search">Buscar vagas</button>
       <p id="search-status" aria-live="polite"></p>
       <pre id="search-summary" class="summary" hidden></pre>
+    </details>
+    <div class="panel triage">
+      <div class="row">
+        <button class="btn" id="btn-classificar">Classificar com o Claude</button>
+        <span id="triage-status" class="claude-status" aria-live="polite"></span>
+      </div>
+      <p class="muted">O Claude lê cada vaga nova, compara com o seu perfil e dá uma nota de encaixe. A lista passa a vir da melhor para a pior.</p>
     </div>
-  </section>
-
-  <section id="tab-vagas" role="tabpanel" hidden>
     <div class="panel">
       <div class="row">
+        <select id="f-fit" aria-label="Encaixe">
+          <option value="">Qualquer encaixe</option><option value="bom">Encaixe alto ou médio</option>
+          <option value="alto">Só encaixe alto</option><option value="sem">Ainda sem nota</option>
+        </select>
         <input type="text" id="f-text" placeholder="Filtrar por cargo ou empresa" aria-label="Filtrar por cargo ou empresa">
         <select id="f-model" aria-label="Modelo de trabalho">
           <option value="">Qualquer modelo</option><option value="remote">Remoto</option>
@@ -176,22 +316,21 @@
     <div id="vagas" class="cards"></div>
   </section>
 
-  <section id="tab-interesse" role="tabpanel" hidden>
+  <section id="tab-interesse" role="tabpanel" aria-labelledby="t-interesse" hidden>
     <div class="panel">
-      <p><strong>Avaliar com o Claude</strong> traz a nota de encaixe, os pontos fortes e as lacunas (leva alguns minutos).
-        Depois, <strong>Fazer currículo e carta</strong> escreve, revisa e compila os dois documentos (pode levar meia hora) e registra a candidatura.
-        O Claude trabalha numa vaga por vez e usa o seu plano, como numa conversa.</p>
-      <p class="muted">Prefere acompanhar e corrigir junto? Copie o pedido e cole no painel do Claude, no VS Code.</p>
+      <p class="muted">Cada vaga segue três etapas: <strong>avaliar</strong> (a nota completa, uns minutos),
+        <strong>currículo e carta</strong> (até meia hora) e <strong>revisar e enviar</strong>, que é com você.
+        O Claude faz um pedido por vez e usa o seu plano. As de nota maior vêm primeiro.</p>
       <p id="claude-global" class="claude-status" aria-live="polite"></p>
     </div>
     <div id="interesse" class="cards"></div>
   </section>
 
-  <section id="tab-candidaturas" role="tabpanel" hidden>
-    <div id="candidaturas"></div>
+  <section id="tab-candidaturas" role="tabpanel" aria-labelledby="t-candidaturas" hidden>
+    <div id="candidaturas" class="cards"></div>
   </section>
 
-  <section id="tab-cltpj" role="tabpanel" hidden>
+  <section id="tab-cltpj" role="tabpanel" aria-labelledby="t-cltpj" hidden>
     <div class="panel">
       <h2>Quanto vale cada proposta no ano</h2>
       <p class="muted">Preencha um lado para ver quanto o outro precisa pagar para empatar, ou os dois para comparar.
@@ -266,20 +405,99 @@ function warningOf(row) {
   return v && v !== "posting_signals: none" ? v.replace(/^posting_signals:\s*⚠?\s*/, "") : null;
 }
 
+// ---- tema ----
+function setTheme(name) {
+  document.documentElement.dataset.theme = name;
+  document.querySelectorAll(".theme button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === name)));
+  try { localStorage.setItem("painel-tema", name); } catch { /* sem armazenamento, vale só nesta aba */ }
+}
+document.querySelectorAll(".theme button").forEach((b) => b.addEventListener("click", () => setTheme(b.dataset.theme)));
+setTheme(document.documentElement.dataset.theme || "claro");
+
+// Uma lista vazia diz o que falta e oferece o próximo passo, em vez de só "nada aqui".
+function emptyState(title, text, label, action) {
+  return el("div", { class: "empty" }, el("strong", { text: title }), el("p", { text: text }),
+    label ? el("button", { class: "btn secondary", onclick: action, text: label }) : null);
+}
+
 // ---- abas ----
 const tabs = [...document.querySelectorAll('[role="tab"]')];
 function show(name) {
   for (const t of tabs) {
     const on = t.dataset.tab === name;
     t.setAttribute("aria-selected", String(on));
+    t.tabIndex = on ? 0 : -1;  // só a aba ativa entra no Tab; as setas andam entre elas
     document.getElementById("tab-" + t.dataset.tab).hidden = !on;
   }
-  if (name === "vagas") loadResults();
+  if (name === "inicio") loadSummary();
+  if (name === "vagas") refreshClaude().then(loadResults);
   if (name === "interesse") refreshClaude().then(loadSaved);
   if (name === "perfil") refreshClaude().then(() => loadProfile());
   if (name === "candidaturas") loadApplications();
 }
 tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.tab)));
+// Teclado nas abas, como manda o padrão de abas da WAI-ARIA: setas, Home e End.
+document.querySelector('[role="tablist"]').addEventListener("keydown", (e) => {
+  const i = tabs.indexOf(document.activeElement);
+  if (i < 0) return;
+  const to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+  if (to === undefined) return;
+  e.preventDefault();
+  const t = tabs[(to + tabs.length) % tabs.length];
+  show(t.dataset.tab);
+  t.focus();
+});
+
+// ---- início ----
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+function goVagas(fit) {
+  show("vagas");
+  if (fit !== undefined) { document.getElementById("f-fit").value = fit; renderResults(); }
+}
+// O próximo passo é a primeira etapa do caminho que tem algo esperando por você.
+function nextStep(s) {
+  const c = s.candidaturas || {};
+  if (!s.perfil_pronto) return ["Monte o seu perfil", "Tudo depende dele: a busca, as notas e o currículo. Envie o currículo em PDF e o Claude faz o resto.",
+    "Ir para Meu perfil", () => show("perfil")];
+  if (!s.vagas_novas) return ["Busque vagas novas", s.ultima_busca
+    ? `A última busca foi em ${s.ultima_busca.slice(0, 10).split("-").reverse().join("/")}, e todas as vagas dela já foram separadas.`
+    : "Ainda não há busca. Ela leva de 1 a 3 minutos e usa as buscas do seu perfil.",
+    "Fazer uma busca", () => { show("vagas"); document.getElementById("search-box").open = true; }];
+  if (s.sem_nota) return [`Classifique ${plural(s.sem_nota, "vaga nova", "vagas novas")}`,
+    "O Claude dá uma nota de encaixe a cada uma, e você começa pelas melhores.", "Ver e classificar", () => goVagas("")];
+  if (s.bom_encaixe) return [`Separe as vagas: ${plural(s.bom_encaixe, "tem encaixe alto ou médio", "têm encaixe alto ou médio")}`,
+    "Marque \"Me interessa\" nas que quer avaliar e descarte o resto.", "Separar vagas", () => goVagas("bom")];
+  if (s.sem_avaliacao) return [`Avalie ${plural(s.sem_avaliacao, "vaga que te interessa", "vagas que te interessam")}`,
+    "A avaliação mostra a nota completa, os pontos fortes e as lacunas, antes de fazer currículo e carta.",
+    "Ir para Me interessam", () => show("interesse")];
+  if (c.drafted) return [`Revise e envie ${plural(c.drafted, "candidatura", "candidaturas")}`,
+    "Currículo e carta estão prontos. Confira os PDFs e se candidate no site da empresa.", "Ver candidaturas", () => show("candidaturas")];
+  return ["Tudo em dia", "Nada esperando por você agora. Que tal uma busca nova?", "Fazer uma busca",
+    () => { show("vagas"); document.getElementById("search-box").open = true; }];
+}
+async function loadSummary() {
+  let s;
+  try { s = await api("/api/summary"); } catch (e) { return; }
+  const [title, text, label, go] = nextStep(s);
+  document.getElementById("next-step").replaceChildren(
+    el("p", { class: "eyebrow", text: "Próximo passo" }), el("h2", { text: title }), el("p", { text: text }),
+    el("button", { class: "btn", onclick: go, text: label }));
+  const c = s.candidaturas || {};
+  const total = Object.values(c).reduce((a, b) => a + b, 0);
+  const stat = (num, label, detail, go) => el("button", { class: "stat", onclick: go },
+    el("span", { class: "num", text: String(num) }), el("span", { class: "label", text: label }),
+    el("span", { class: "detail", text: detail }));
+  document.getElementById("stats").replaceChildren(
+    stat(s.vagas_novas, "Vagas novas", s.vagas_novas ? `${s.bom_encaixe} com bom encaixe · ${s.sem_nota} sem nota` : "Faça uma busca",
+      () => goVagas()),
+    stat(s.interessam, "Me interessam", `${s.sem_avaliacao} a avaliar · ${s.sem_documentos} prontas para currículo e carta`,
+      () => show("interesse")),
+    stat(total, "Candidaturas", [c.drafted && `${c.drafted} em rascunho`, c.applied && `${c.applied} enviadas`,
+      c.interview && `${c.interview} em entrevista`, c.offer && `${c.offer} com proposta`].filter(Boolean).join(" · ") || "Nenhuma ainda",
+      () => show("candidaturas")),
+    stat(s.perfil_pronto ? "✓" : "—", "Meu perfil", s.perfil_pronto ? "Pronto. Atualize quando mudar o currículo." : "Ainda não montado",
+      () => show("perfil")));
+}
 
 // ---- buscar ----
 const statusEl = document.getElementById("search-status");
@@ -303,9 +521,12 @@ function renderStatus(s) {
   const job = s.search;
   btnSearch.disabled = job.running || !s.priorities.length;
   statusEl.replaceChildren();
-  if (job.running) statusEl.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` Buscando desde ${job.started.slice(11, 16)}… pode continuar usando o computador.`);
+  if (job.running) {
+    document.getElementById("search-box").open = true;
+    statusEl.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` Buscando desde ${job.started.slice(11, 16)}… pode continuar usando o computador.`);
+  }
   else if (job.error) statusEl.append(el("span", { class: "error", text: "A busca não terminou: " + job.error }));
-  else if (job.summary) statusEl.append("Busca concluída. ", el("a", { href: "#", onclick: (e) => { e.preventDefault(); show("vagas"); }, text: "Ver as vagas novas" }));
+  else if (job.summary) statusEl.textContent = "Busca concluída: as vagas novas estão logo abaixo. Classifique para ver as melhores primeiro.";
   summaryEl.hidden = !job.summary;
   summaryEl.textContent = job.summary || "";
   if (!job.running && polling) { clearInterval(polling); polling = null; loadResults(); }
@@ -322,7 +543,7 @@ btnSearch.addEventListener("click", async () => {
 });
 
 // ---- vagas novas ----
-const filters = ["f-text", "f-model", "f-portal", "f-nowarn"].map((id) => document.getElementById(id));
+const filters = ["f-text", "f-model", "f-portal", "f-nowarn", "f-fit"].map((id) => document.getElementById(id));
 filters.forEach((f) => f.addEventListener("input", renderResults));
 
 async function loadResults() {
@@ -334,12 +555,26 @@ async function loadResults() {
     ...[...new Set(results.map((r) => r.portal))].sort().map((p) => el("option", { value: p, text: portalName(p) })));
   sel.value = current;
   document.getElementById("count-new").textContent = results.length ? `(${results.length})` : "";
+  document.getElementById("search-when").textContent = results.length ? "" : "· nenhuma vaga nova ainda";
+  if (!results.length) document.getElementById("search-box").open = true;
   renderResults();
+  renderTriageStatus();
+}
+
+const ENCAIXE = { alto: "Encaixe alto", medio: "Encaixe médio", baixo: "Encaixe baixo" };
+function fitBadge(t) {
+  return t ? el("span", { class: "fit fit-" + t.encaixe, text: `${ENCAIXE[t.encaixe]} · ${t.nota}` }) : null;
 }
 
 function card(row, decide) {
   const chips = el("div", { class: "chips" });
-  const add = (t) => t && chips.append(el("span", { class: "chip", text: t }));
+  const seen = new Set();
+  const add = (t) => {
+    const key = String(t || "").trim().toLowerCase();
+    if (!key || seen.has(key)) return;  // o mesmo dado duas vezes ("Remoto · Remoto") só polui
+    seen.add(key);
+    chips.append(el("span", { class: "chip", text: t }));
+  };
   add(row.location);
   add(MODELOS[row.workplace_type] || "Modelo não informado");
   add(row.seniority);
@@ -351,31 +586,69 @@ function card(row, decide) {
   const url = safeUrl(row.url);
   const full = row.full_posting && safeUrl(row.full_posting.url);
   return el("article", { class: "card" },
+    fitBadge(row.triagem),
     el("h3", { text: row.title || "(sem título)" }),
     el("p", { class: "company", text: row.company || "Empresa não informada" }),
+    row.triagem && row.triagem.motivo ? el("p", { class: "motivo", text: row.triagem.motivo }) : null,
     chips,
     warn ? el("div", { class: "warn", text: "⚠ " + warn }) : null,
     el("div", { class: "actions" },
-      url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
-      full ? el("a", { href: full, target: "_blank", rel: "noopener noreferrer", text: "Vaga completa na empresa" }) : null,
       decide ? el("button", { class: "btn small", onclick: () => decide(row, "interesse"), text: "Me interessa" }) : null,
-      decide ? el("button", { class: "btn small secondary", onclick: () => decide(row, "descartar"), text: "Descartar" }) : null));
+      decide ? el("button", { class: "btn small ghost", onclick: () => decide(row, "descartar"), text: "Descartar" }) : null,
+      el("span", { class: "links" },
+        url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Abrir a vaga ↗" }) : null,
+        full ? el("a", { href: full, target: "_blank", rel: "noopener noreferrer", text: "Texto completo na empresa ↗" }) : null)));
 }
 
 function renderResults() {
-  const [text, model, portal, nowarn] = [filters[0].value.toLowerCase(), filters[1].value, filters[2].value, filters[3].checked];
+  const [text, model, portal, nowarn, fit] = [filters[0].value.toLowerCase(), filters[1].value, filters[2].value,
+    filters[3].checked, filters[4].value];
   const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const fitOk = (t) => !fit || (fit === "sem" ? !t : fit === "alto" ? t && t.encaixe === "alto"
+    : t && t.encaixe !== "baixo");
   const rows = results.filter((r) =>
     (!text || fold(`${r.title} ${r.company}`).includes(fold(text))) &&
     (!model || (model === "none" ? !r.workplace_type : r.workplace_type === model)) &&
     (!portal || r.portal === portal) &&
-    (!nowarn || !warningOf(r)));
+    (!nowarn || !warningOf(r)) &&
+    fitOk(r.triagem));
+  // As de nota maior primeiro; as sem nota no fim, na ordem da busca.
+  rows.sort((a, b) => (b.triagem ? b.triagem.nota : -1) - (a.triagem ? a.triagem.nota : -1));
   const box = document.getElementById("vagas");
   document.getElementById("vagas-info").textContent = results.length
     ? `${rows.length} de ${results.length} vagas novas. "Me interessa" e "Descartar" tiram a vaga desta lista e das próximas buscas.` : "";
   box.replaceChildren(...(rows.length ? rows.map((r) => card(r, decide))
-    : [el("p", { class: "empty", text: results.length ? "Nenhuma vaga com esses filtros." : "Nenhuma vaga nova ainda. Rode uma busca na aba Buscar." })]));
+    : [results.length
+      ? emptyState("Nenhuma vaga com esses filtros", "Tente outro encaixe ou outro modelo de trabalho.", "Limpar os filtros", () => {
+          filters.forEach((f) => { if (f.type === "checkbox") f.checked = false; else f.value = ""; });
+          renderResults();
+        })
+      : emptyState("Nenhuma vaga nova por aqui", "Rode uma busca: ela usa as buscas do seu perfil e leva de 1 a 3 minutos.",
+          "Abrir Nova busca", () => { const d = document.getElementById("search-box"); d.open = true; d.scrollIntoView(); })]));
 }
+
+function renderTriageStatus() {
+  const st = document.getElementById("triage-status");
+  const btn = document.getElementById("btn-classificar");
+  const pending = results.filter((r) => !r.triagem).length;
+  btn.disabled = !claude.available || claude.running || !pending;
+  btn.hidden = results.length > 0 && !pending && !(claude.running && claude.step === "classificar");
+  btn.textContent = pending && pending < results.length ? `Classificar as ${pending} sem nota` : "Classificar com o Claude";
+  st.replaceChildren();
+  if (claude.running && claude.step === "classificar") {
+    st.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Claude está lendo as vagas desde ${claude.started.slice(11, 16)}… leva alguns minutos.`);
+  } else if (claude.error && claude.step === "classificar") st.append(el("span", { class: "error", text: "O Claude não terminou: " + claude.error }));
+  else if (claude.running) st.textContent = `O Claude está ocupado (${PASSOS[claude.step]}). Espere terminar.`;
+  else if (!claude.available) st.append(el("span", { class: "error", text: "Não achei o Claude Code neste computador." }));
+  else if (results.length && !pending) st.textContent = "Todas as vagas novas têm nota.";
+}
+document.getElementById("btn-classificar").addEventListener("click", async () => {
+  try {
+    await api("/api/claude", { step: "classificar" });
+    await refreshClaude();
+    if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
+  } catch (e) { document.getElementById("triage-status").textContent = "Não consegui chamar o Claude: " + e.message; }
+});
 
 async function decide(row, decision) {
   try {
@@ -441,7 +714,7 @@ function markdown(text) {
 
 // ---- me interessam ----
 const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta", perfil: "montando o seu perfil",
-  formulario: "preenchendo o formulário pelos seus documentos" };
+  formulario: "preenchendo o formulário pelos seus documentos", classificar: "classificando as vagas novas" };
 let claude = { available: true, running: false };
 let claudePolling = null;
 
@@ -461,39 +734,85 @@ async function refreshClaude() {
   else if (claude.running) g.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Claude está ${PASSOS[claude.step]} desde ${claude.started.slice(11, 16)}…`);
   else if (claude.error) g.append(el("span", { class: "error", text: "O Claude não terminou: " + claude.error }));
   if (!claude.running && claudePolling) { clearInterval(claudePolling); claudePolling = null; }
-  if (was !== claude.running) { loadSaved(); if (!document.getElementById("tab-perfil").hidden) loadProfile(); }
+  if (was !== claude.running) {
+    loadSaved();
+    if (!document.getElementById("tab-perfil").hidden) loadProfile();
+    if (!document.getElementById("tab-vagas").hidden) loadResults();
+    if (!document.getElementById("tab-inicio").hidden) loadSummary();
+  }
   renderPerfilStatus();
+  renderTriageStatus();
+}
+
+async function copyText(e, text, done) {
+  try { await navigator.clipboard.writeText(text); e.target.textContent = done; }
+  catch { prompt("Copie:", text); }
+}
+// A melhor nota que se sabe de uma vaga: a da avaliação completa, senão a da triagem.
+const bestGrade = (s) => (s.avaliacao ? s.avaliacao.nota : s.triagem ? s.triagem.nota : -1);
+function gradeBadge(s) {
+  if (!s.avaliacao) return fitBadge(s.triagem);
+  const n = s.avaliacao.nota;
+  const tier = n >= 70 ? "alto" : n >= 40 ? "medio" : "baixo";
+  return el("span", { class: "fit fit-" + tier, text: `${s.avaliacao.veredito || "Avaliada"} · ${n}` });
+}
+function steps(ans) {
+  const stage = ans.redigir ? 2 : ans.avaliar ? 1 : 0;
+  const names = ["Avaliar", "Currículo e carta", "Revisar e enviar"];
+  const out = el("p", { class: "steps", "aria-label": `Etapa ${stage + 1} de 3: ${names[stage]}` });
+  names.forEach((n, i) => {
+    if (i) out.append(el("span", { "aria-hidden": "true", text: "→" }));
+    out.append(el("span", { class: i < stage ? "done" : i === stage ? "now" : "", text: (i < stage ? "✓ " : "") + n }));
+  });
+  return out;
+}
+async function unsaveJob(s) {
+  if (!confirm(`Tirar "${s.title}" de Me interessam? Ela não volta nas próximas buscas.`)) return;
+  try { await api("/api/unsave", { url: s.url }); loadSaved(); }
+  catch (e) { alert("Não consegui tirar: " + e.message); }
 }
 
 async function loadSaved() {
   const { saved } = await api("/api/saved");
+  saved.sort((a, b) => bestGrade(b) - bestGrade(a));
   const box = document.getElementById("interesse");
   box.replaceChildren(...(saved.length ? saved.map((s) => {
     const url = safeUrl(s.url);
-    const cmd = url ? `/apply ${url}` : null;
     const ans = s.claude || {};
     const busy = claude.running && claude.url === s.url;
     const off = !url || !claude.available || claude.running;
     const answer = (title, text, open) => text ? el("details", { class: "answer", ...(open ? { open: "" } : {}) },
       el("summary", { text: title }), markdown(text)) : null;
+    const btn = (cls, text, onclick, disabled) => el("button", { class: "btn small " + cls, onclick, text, ...(disabled ? { disabled: "" } : {}) });
+    // Uma ação principal por etapa; as outras ficam discretas. Avaliação abaixo de 40: o
+    // natural é tirar a vaga, e o currículo fica possível, mas sem destaque.
+    const weak = s.avaliacao && s.avaliacao.nota < 40 && !ans.redigir;
+    const main = !ans.avaliar ? btn("", "Avaliar com o Claude", () => runClaude(s, "avaliar"), off)
+      : weak ? btn("", "Tirar da lista", () => unsaveJob(s), busy)
+      : !ans.redigir ? btn("", "Fazer currículo e carta", () => runClaude(s, "redigir"), off)
+      : btn("", "Ver em Candidaturas", () => show("candidaturas"));
     return el("article", { class: "card" },
+      gradeBadge(s),
       el("h3", { text: s.title || "(sem título)" }),
       el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal)} · marcada em ${(s.first_seen || "").split("-").reverse().join("/")}` }),
+      s.triagem && s.triagem.motivo && !ans.avaliar ? el("p", { class: "motivo", text: s.triagem.motivo }) : null,
+      steps(ans),
       el("div", { class: "actions" },
-        url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
-        el("button", { class: "btn small", onclick: () => runClaude(s, "avaliar"), text: ans.avaliar ? "Avaliar de novo" : "Avaliar com o Claude",
-          ...(off ? { disabled: "" } : {}) }),
-        el("button", { class: "btn small", onclick: () => runClaude(s, "redigir"),
-          text: ans.redigir ? "Refazer currículo e carta" : "Fazer currículo e carta",
-          title: ans.avaliar ? "" : "Avalie a vaga primeiro", ...(off || !ans.avaliar ? { disabled: "" } : {}) }),
-        cmd ? el("button", { class: "btn small secondary", text: "Copiar pedido", onclick: async (e) => {
-          try { await navigator.clipboard.writeText(cmd); e.target.textContent = "Copiado: cole no Claude"; }
-          catch { prompt("Copie este pedido:", cmd); }
-        } }) : null),
+        main,
+        weak ? btn("ghost", "Fazer currículo mesmo assim", () => runClaude(s, "redigir"), off) : null,
+        ans.avaliar ? btn("ghost", ans.redigir ? "Refazer currículo e carta" : "Avaliar de novo",
+          () => runClaude(s, ans.redigir ? "redigir" : "avaliar"), off) : null,
+        weak ? null : btn("ghost", "Tirar da lista", () => unsaveJob(s), busy),
+        el("span", { class: "links" },
+          url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Abrir a vaga ↗" }) : null,
+          url ? el("a", { href: "#", title: "Copia o pedido para colar no Claude, no VS Code, e acompanhar passo a passo",
+            onclick: (e) => { e.preventDefault(); copyText(e, `/apply ${url}`, "Copiado: cole no Claude"); },
+            text: "Fazer pela conversa" }) : null)),
       busy ? el("p", { class: "claude-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O Claude está ${PASSOS[claude.step]}…`) : null,
-      answer("Avaliação do Claude", ans.avaliar, !ans.redigir),
-      answer("Currículo e carta: relatório", ans.redigir, true));
-  }) : [el("p", { class: "empty", text: "Nenhuma vaga marcada ainda. Na aba Vagas novas, clique em \"Me interessa\"." })]));
+      answer("Avaliação do Claude", ans.avaliar, false),
+      answer("Currículo e carta: relatório", ans.redigir, false));
+  }) : [emptyState("Nenhuma vaga guardada ainda", "Em Vagas novas, clique em \"Me interessa\" nas que quiser avaliar. As de nota maior vêm primeiro.",
+    "Ir para Vagas novas", () => show("vagas"))]));
 }
 
 // ---- meu perfil ----
@@ -507,17 +826,48 @@ async function loadProfile(refresh) {
   try { perfil = await api("/api/profile" + (refresh ? "?refresh=1" : "")); } catch (e) { return; }
   renderPrivacy();
   renderFiles();
-  if (!document.getElementById("perfil-form").childElementCount) renderForm();
+  const edit = document.getElementById("perfil-edit");
+  if (!document.getElementById("perfil-form").childElementCount) {
+    renderForm();
+    // Com o perfil pronto, a edição fica recolhida; sem ele, ou com sugestão nova do Claude, aberta.
+    edit.open = !perfil.ready || Boolean(perfil.suggestion && perfil.suggestion.nova);
+  }
   applySuggestion();
+  if (document.querySelector("#perfil-form .field.sugerido")) edit.open = true;
   renderPerfilStatus();
+  renderResumo();
+  autosizeAll();
   const out = document.getElementById("perfil-out");
   out.replaceChildren(
     renderProposal(),
-    perfil.report ? el("div", { class: "panel" }, el("details", { class: "answer", open: "" },
+    perfil.report ? el("div", { class: "panel" }, el("details", { class: "answer", ...(perfil.ready ? {} : { open: "" }) },
       el("summary", { text: "O relatório da última montagem" }), markdown(perfil.report))) : null,
     perfil.ready && perfil.profile ? el("div", { class: "panel" }, el("details", { class: "answer" },
       el("summary", { text: "Seu perfil como está agora" }), markdown(perfil.profile.replace(/^---[\s\S]*?---\s*/, "")))) : null);
 }
+
+// O perfil pronto aparece como um resumo das respostas; a edição fica um clique abaixo.
+const RESUMO = [["cargos", "Cargos"], ["senioridade", "Níveis"], ["setores", "Setores"], ["modelo", "Modelo de trabalho"],
+  ["regimes", "Regimes"], ["pretensao_clt", "Pretensão CLT"], ["pretensao_pj", "Mínimo PJ"], ["idiomas", "Idiomas"], ["cidade", "Cidade"]];
+function renderResumo() {
+  const box = document.getElementById("perfil-resumo");
+  const a = perfil.answers || {};
+  const items = RESUMO.filter(([k]) => a[k] && a[k].length);
+  if (!perfil.ready) { box.replaceChildren(); return; }
+  const open = () => { const d = document.getElementById("perfil-edit"); d.open = true;
+    d.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); };
+  box.replaceChildren(el("div", { class: "panel" },
+    el("h2", { text: "Seu perfil está pronto" }),
+    el("p", { class: "muted", text: "É ele que a busca, as notas e o currículo usam. Atualize quando mudar o currículo ou o que você procura." }),
+    items.length ? el("dl", { class: "resumo" }, ...items.flatMap(([k, label]) => [el("dt", { text: label }),
+      el("dd", { text: Array.isArray(a[k]) ? a[k].map((v) => NOMES[v] || v).join(" · ") : a[k] })]))
+      : el("p", { text: "O formulário ainda está em branco: as respostas deixam as notas das vagas mais certeiras." }),
+    el("p", {}, el("button", { class: "btn secondary", onclick: open, text: "Editar documentos e respostas" }))));
+}
+function autosize(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
+function autosizeAll() { document.querySelectorAll("#perfil-form textarea").forEach(autosize); }
+document.getElementById("perfil-form").addEventListener("input", (e) => { if (e.target.tagName === "TEXTAREA") autosize(e.target); });
+document.getElementById("perfil-edit").addEventListener("toggle", autosizeAll);
 
 const ARQUIVOS = { "CLAUDE.md": "Perfil principal", ".claude/skills/job-scraper/search-queries.md": "Buscas de vagas",
   "cv/main_example.tex": "Currículo base" };
@@ -670,6 +1020,7 @@ async function saveForm() {
   const st = document.getElementById("save-status");
   try {
     perfil.answers = (await api("/api/profile", collectForm())).answers;
+    renderResumo();
     clearSuggestion();
     st.textContent = "Respostas salvas.";
     return true;
@@ -750,16 +1101,48 @@ async function loadApplications() {
   const { applications } = await api("/api/applications");
   const box = document.getElementById("candidaturas");
   if (!applications.length) {
-    box.replaceChildren(el("p", { class: "empty", text: "Nenhuma candidatura registrada ainda. Elas aparecem aqui depois do /apply." }));
+    box.replaceChildren(emptyState("Nenhuma candidatura ainda",
+      "Elas aparecem aqui quando o Claude faz o currículo e a carta de uma vaga, em Me interessam.",
+      "Ir para Me interessam", () => show("interesse")));
     return;
   }
-  const head = el("tr", {}, ...["Data", "Empresa", "Cargo", "Situação", "Encaixe"].map((h) => el("th", { text: h })));
-  const rows = applications.slice().reverse().map((a) => el("tr", {},
-    el("td", { text: (a.date || "").split("-").reverse().join("/") }), el("td", { text: a.company || "" }),
-    el("td", { text: a.role || "" }), el("td", { text: STATUS[(a.status || "").toLowerCase()] || a.status || "" }),
-    el("td", { text: a.fit_rating || "" })));
-  box.replaceChildren(el("div", { class: "panel tablewrap" }, el("table", {}, el("thead", {}, head), el("tbody", {}, ...rows))));
+  // As abertas primeiro (na ordem do processo), depois as encerradas; dentro de cada grupo, as mais recentes.
+  const rank = (a) => { const i = ORDEM_ABERTAS.indexOf(norm(a.status)); return i < 0 ? ORDEM_ABERTAS.length : i; };
+  const rows = applications.slice().sort((a, b) => rank(a) - rank(b) || String(b.date).localeCompare(String(a.date)));
+  box.replaceChildren(...rows.map(applicationCard));
 }
+const norm = (s) => String(s || "").trim().toLowerCase().replace(/ /g, "_");
+const DICA = { drafted: "Currículo e carta prontos. Abra os PDFs, revise e se candidate no site da empresa.",
+  applied: "Enviada. Se ficar em silêncio por uns 10 dias, peça um follow-up com /outcome followup.",
+  interview: "Em entrevistas. Para se preparar, use /interview na conversa.",
+  offer: "Chegou uma proposta. Compare na aba CLT × PJ antes de responder." };
+function applicationCard(a) {
+  const st = norm(a.status);
+  const open = ORDEM_ABERTAS.includes(st);
+  const docs = a.docs || {};
+  const doc = (name, label) => docs[name] ? el("a", { href: "/api/doc?path=" + encodeURIComponent(docs[name]),
+    target: "_blank", rel: "noopener", text: label + " ↗" }) : null;
+  const advance = async (e) => {
+    e.target.disabled = true;
+    try { await api("/api/application-status", { date: a.date, company: a.company, role: a.role }); loadApplications(); }
+    catch (err) { e.target.disabled = false; alert("Não consegui gravar: " + err.message); }
+  };
+  const outcome = `/outcome ${a.company || ""}`.trim();
+  return el("article", { class: "card" },
+    el("span", { class: "fit " + (st === "offer" || st === "hired" ? "fit-alto" : open ? "fit-medio" : "fit-baixo"),
+      text: STATUS[st] || a.status || "Sem situação" }),
+    el("h3", { text: a.role || "(sem cargo)" }),
+    el("p", { class: "company", text: [a.company, a.date && "registrada em " + a.date.split("-").reverse().join("/"),
+      a.fit_rating && `nota ${a.fit_rating}/100`].filter(Boolean).join(" · ") }),
+    DICA[st] ? el("p", { class: "motivo", text: DICA[st] }) : null,
+    el("div", { class: "actions" },
+      st === "drafted" ? el("button", { class: "btn small", onclick: advance, text: "Marquei como enviada" }) : null,
+      st === "applied" ? el("button", { class: "btn small ghost", onclick: advance, text: "Chamaram para entrevista" }) : null,
+      open && st !== "drafted" ? el("button", { class: "btn small ghost", title: "O resultado vai pela conversa: o /outcome também guarda o que você aprendeu",
+        onclick: (e) => copyText(e, outcome, "Copiado: cole no Claude"), text: "Registrar resultado" }) : null,
+      el("span", { class: "links" }, doc("cv", "Currículo (PDF)"), doc("carta", "Carta (PDF)"))));
+}
+const ORDEM_ABERTAS = ["drafted", "applied", "interview", "offer"];
 
 // ---- CLT × PJ ----
 const CAMPOS_CLTPJ = ["clt", "vr", "saude", "outros", "plr", "pj", "meses", "contador", "custos", "beneficios_pj",
@@ -783,8 +1166,9 @@ refreshStatus().then(() => api("/api/status")).then((s) => {
   if (s.search.running) polling = setInterval(refreshStatus, 2000);
   claude = s.claude;
   if (claude.running) claudePolling = setInterval(refreshClaude, 5000);
-  return api("/api/profile");
-}).then((p) => { if (p && !p.ready) show("perfil"); });
+  loadResults();  // o número de vagas novas na aba
+  show("inicio");
+});
 </script>
 </body>
 </html>

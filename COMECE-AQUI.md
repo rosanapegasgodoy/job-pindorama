@@ -130,20 +130,24 @@ Explorador de Arquivos e dê **dois cliques em `abrir-painel.bat`**. Abre uma ja
 aberta, pode minimizar) e o navegador com o painel. Se o navegador não abrir sozinho, copie o
 endereço que aparece na janela preta (`http://127.0.0.1:8765/`) e cole no navegador.
 
+- **Início:** o próximo passo, com um botão que leva até ele, e os números de cada etapa.
 - **Meu perfil:** os seus documentos, o formulário e o botão que monta o perfil (veja o
-  Passo 6). Enquanto o perfil não existe, o painel abre nesta aba.
-- **Buscar:** escolha as prioridades e clique em "Buscar vagas" (leva de 1 a 3 minutos).
-- **Vagas novas:** filtre por modelo de trabalho e portal, veja os avisos e abra cada vaga.
-  "Me interessa" guarda a vaga; "Descartar" tira da lista. As duas somem das próximas buscas.
+  Passo 6).
+- **Vagas novas:** em **Nova busca**, escolha as prioridades e clique em "Buscar vagas" (leva de
+  1 a 3 minutos). Depois, **Classificar com o Claude** dá a cada vaga uma nota de encaixe e
+  ordena a lista da melhor para a pior. Filtre, veja os avisos e abra cada vaga. "Me interessa"
+  guarda a vaga; "Descartar" tira da lista. As duas somem das próximas buscas.
 - **Me interessam:** as vagas guardadas, cada uma com três botões:
   - **Avaliar com o Claude:** a nota de encaixe, os pontos fortes e as lacunas aparecem ali
     mesmo, no cartão da vaga (leva alguns minutos).
   - **Fazer currículo e carta:** depois da avaliação, o Claude escreve, revisa e gera os PDFs,
     e a vaga entra em Candidaturas (pode levar meia hora). Os arquivos ficam nas pastas `cv` e
     `cover_letters`.
-  - **Copiar pedido:** para fazer tudo isso conversando com o Claude no VS Code, acompanhando
-    e corrigindo junto.
-- **Candidaturas:** as candidaturas registradas pelo `/apply`.
+  - **Fazer pela conversa:** para fazer tudo isso conversando com o Claude no VS Code,
+    acompanhando e corrigindo junto.
+  - **Tirar da lista:** para a vaga que não vale mais a pena.
+- **Candidaturas:** as candidaturas registradas pelo `/apply`, com os PDFs para revisar e os
+  botões **Marquei como enviada** e **Chamaram para entrevista**.
 
 O Claude trabalha numa vaga por vez e usa o seu plano, como numa conversa. Pelo painel ele não
 pode perguntar nada: se a vaga tiver algo estranho, ele para e avisa, e você decide na conversa.

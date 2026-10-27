@@ -72,7 +72,8 @@ o perfil, melhores os resultados.** Você faz isso uma vez e atualiza quando alg
 ### Pelo painel
 
 1. Abra o painel: dois cliques em `abrir-painel.bat` (Windows) ou `python3 tools/painel.py`.
-   Na primeira vez, ele abre direto na aba **Meu perfil**.
+   Ele abre no **Início**, que mostra o próximo passo. Na primeira vez, é montar o perfil:
+   clique em **Ir para Meu perfil**.
 2. **Seus documentos:** clique em **Enviar currículo (PDF)**. Se tiver, envie também o
    **LinkedIn (PDF)** (no LinkedIn: seu perfil > Mais > Salvar como PDF).
 3. **O que o currículo não diz:** ao receber o PDF, o Claude já preenche o que der para tirar
@@ -135,16 +136,21 @@ refazer só uma parte: `/setup --section search` (só as buscas), por exemplo.
 
 ### Pelo painel
 
-1. Aba **Buscar**. As prioridades 1 e 2 já vêm marcadas; escolha **Publicadas nos últimos
-   14 dias** e clique em **Buscar vagas**. Leva de 1 a 3 minutos.
-2. Clique em **Ver as vagas novas**.
-3. Na aba **Vagas novas**, use os filtros. A Ana marcou **Remoto** e **Só sem avisos**.
+1. Aba **Vagas novas**, **Nova busca**. As prioridades 1 e 2 já vêm marcadas; escolha
+   **Publicadas nos últimos 14 dias** e clique em **Buscar vagas**. Leva de 1 a 3 minutos, e a
+   lista aparece logo abaixo.
+2. Clique em **Classificar com o Claude**. Em alguns minutos, cada vaga ganha um encaixe (alto,
+   médio ou baixo), uma nota e o motivo, e a lista passa a vir da melhor para a pior.
+3. Use os filtros. A Ana escolheu **Encaixe alto ou médio**, **Remoto** e **Só sem avisos**.
 4. Para cada vaga, olhe o cartão:
 
    ```
    ┌──────────────────────────────────────────────────────────┐
+   │ [Encaixe alto · 84]                                      │
    │ Analista de Dados Pleno                                  │
    │ Acme Tecnologia                                          │
+   │ SQL e Power BI no centro da vaga; pede dbt, que ela não  │
+   │ usa no dia a dia                                         │
    │ [Brasil] [Remoto] [Pleno] [CLT] [Publicada em 20/10] [Gupy]│
    │ ⚠ texto diz "híbrido, 2x por semana em São Paulo"        │
    │ Ver vaga   [Me interessa]  [Descartar]                    │
@@ -334,7 +340,7 @@ Uma rotina que cabe em uma ou duas horas por semana:
 
 | Quando | O quê | Onde |
 |---|---|---|
-| Segunda | Buscar vagas dos últimos 7 dias e separar 3 a 5 | Painel: Buscar e Vagas novas |
+| Segunda | Buscar vagas dos últimos 7 dias, classificar e separar 3 a 5 | Painel: Vagas novas |
 | Segunda | Avaliar as separadas | Painel: Me interessam |
 | Terça a quinta | Gerar, **revisar** e enviar as que valem a pena; registrar com `/outcome` | Painel e conversa |
 | Sexta | `/outcome followup` para as que estão em silêncio; `/gmail-sync`, se usar | Conversa |

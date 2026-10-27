@@ -151,6 +151,13 @@ class PainelPermissionGuardTests(GuardRepoFixture):
         path.parent.mkdir(exist_ok=True)
         path.write_text((REPO_ROOT / "tools" / "painel" / "claude-settings-formulario.json").read_text(encoding="utf-8"))
         self.assertEqual(run_guards(self.root).returncode, 0)
+        # Grading postings reads third-party text: the same read-only list, never the web.
+        triage = self.root / "tools" / "painel" / "claude-settings-classificar.json"
+        triage.write_text((REPO_ROOT / "tools" / "painel" / "claude-settings-classificar.json").read_text(encoding="utf-8"))
+        self.assertEqual(run_guards(self.root).returncode, 0)
+        triage.write_text(json.dumps({"permissions": {"allow": ["Read", "WebFetch"]}}))
+        self.assertEqual(run_guards(self.root).returncode, 1)
+        triage.write_text((REPO_ROOT / "tools" / "painel" / "claude-settings-classificar.json").read_text(encoding="utf-8"))
         # Filling the form reads the PDFs; it never writes, not even a proposal.
         path.write_text(json.dumps({"permissions": {"allow": ["Read", "Edit(documents/perfil/proposta/**)"]}}))
         result = run_guards(self.root)

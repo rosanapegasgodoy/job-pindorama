@@ -271,7 +271,7 @@ Diferenças em relação à conversa:
 - **Sem fonte, sem número.** A referência salarial e os fatos sobre a empresa só entram com uma página consultada na própria execução. Sem isso, a avaliação diz "não consultada".
 - **As respostas ficam em `documents/applications/_painel/`**, fora do git. Uma vaga por vez.
 
-Quer acompanhar e corrigir junto? O botão **Copiar pedido** continua lá: cole o `/apply` na conversa.
+Quer acompanhar e corrigir junto? O link **Fazer pela conversa** continua lá: cole o `/apply` na conversa.
 
 ## Personalização
 

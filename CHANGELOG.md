@@ -15,6 +15,56 @@ per-file diff commands.
 
 ### Added
 
+- **Panel UX, third pass: a visual identity and accessibility** - one stylesheet built on
+  tokens: palm green for actions, sun ochre for the middle ground, warm paper background, with
+  a dark set of the same tokens, AA contrast in both. The light theme is the default; a
+  Claro / Escuro / Automático switch in the header picks another, set before the first paint
+  and kept in the browser's localStorage (guarded: without storage, the choice lasts the tab). Solid green is kept for the one main action
+  per card; fit badges use the soft versions. A small brand mark, a sticky header with the tabs,
+  40px buttons (36px small), focus rings on every control. System fonts only: the page keeps its
+  no-external-resources CSP. Accessibility: a skip link, tabs wired as the WAI-ARIA tabs
+  pattern (`aria-controls`, labelled panels, roving tabindex, arrow keys, Home and End), smooth
+  scrolling only without `prefers-reduced-motion`, and scroll targets clear of the sticky header.
+  Empty lists now say what is missing and offer the next step as a button.
+
+- **Panel UX, second pass: cards with one next action, the profile as a summary, applications
+  you can move** -
+  - "Me interessam" sorts by the best grade known (the full evaluation's "Nota geral", parsed
+    from the report, else the triage grade) and shows the stage of each job
+    (Avaliar → Currículo e carta → Revisar e enviar) with one highlighted next action and the
+    rest as quiet buttons. An evaluation under 40 makes "Tirar da lista" the main action.
+    "Tirar da lista" (`/api/unsave`) marks a saved job as discarded so it never comes back;
+    "Copiar pedido" is now the "Fazer pela conversa" link;
+  - "Candidaturas" are cards, open ones first, with a tip for the current status and links to
+    the generated PDFs (`/api/doc`, which serves only `cv/main_*.pdf` and
+    `cover_letters/cover_*.pdf` named by a tracker row, with `frame-ancestors 'none'`). The two
+    simple moves are buttons (`/api/application-status`: drafted → applied → interview, noted in
+    the row's notes, line endings kept); results stay with `/outcome`, which also writes the
+    `outcome.md` that `/setup` calibrates from;
+  - "Meu perfil", once ready, opens on a summary of the answers, with the documents, form and
+    build steps collapsed; the form's text areas grow to fit their content;
+  - new-job cards keep one strong button ("Me interessa"), a quiet "Descartar" and the links on
+    the right.
+
+- **Panel: a home tab, the search inside "Vagas novas", and triage by Claude** - the first UX
+  pass. The panel opened on six flat tabs with no sense of where to go next, and its new
+  postings came unranked, raw from the portals, which is why `/scrape` in the chat surfaced
+  better jobs. Now:
+  - **Início** shows the next step (the first stage of the path with something waiting:
+    profile, search, triage, sorting, evaluation, drafts to send) with a button straight to it,
+    and the counts of each stage (`/api/summary`);
+  - the search moved from its own near-empty tab into a collapsible "Nova busca" on top of
+    "Vagas novas";
+  - **Classificar com o Claude** runs the `/scrape` Step 3 quick fit on the new postings without
+    a grade (up to 40 per run): a read-only `claude -p` (`claude-settings-classificar.json`:
+    Read, Glob, Grep - no web, no shell, no writes) gets the postings from the search file,
+    never from the browser, with short ids instead of URLs and the text marked as third-party
+    data. The panel accepts only a known fit and a 0-100 grade for ids in the batch and keeps
+    the grades in `documents/applications/_painel/triagem.json`. The list sorts by grade, a fit
+    filter shows only high and medium, and each card shows the fit, the grade and the reason;
+    "Me interessam" shows them too;
+  - repeated chips on a card ("Remoto · Remoto") are shown once.
+
 - **`tools/clt_pj.py`, the CLT × PJ calculator, and a "CLT × PJ" panel tab** - dimension 6 of
   `04-job-evaluation.md` had the rules in prose and the model did the arithmetic in its head. The
   tool computes a full year on each side with the 2026 tables (INSS; IRRF with the Lei 15.270

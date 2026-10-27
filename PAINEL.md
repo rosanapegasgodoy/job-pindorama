@@ -16,13 +16,14 @@ que vem depois do painel (revisar, enviar, acompanhar, entrevista), veja o
 
 ```mermaid
 flowchart TD
-    A([Abrir o painel]) --> P[Meu perfil]
+    A([Abrir o painel: Início mostra o próximo passo]) --> P[Meu perfil]
     P --> P1[1. Enviar currículo e LinkedIn em PDF]
-    P1 --> P2[2. Responder o formulário]
+    P1 --> P2[2. Conferir o formulário que o Claude preencheu]
     P2 --> P3[3. Montar meu perfil com o Claude]
     P3 --> P4[4. Revisar e aplicar a proposta]
-    P4 --> B[Buscar]
-    B --> V[Vagas novas]
+    P4 --> B[Vagas novas: Nova busca]
+    B --> T[Classificar com o Claude]
+    T --> V[Vagas da melhor para a pior]
     V -->|Descartar| X([Some das próximas buscas])
     V -->|Me interessa| I[Me interessam]
     I --> I1[Avaliar com o Claude]
@@ -37,7 +38,8 @@ flowchart TD
 | Etapa | Aba | Quem faz | Quanto tempo |
 |---|---|---|---|
 | Montar o perfil | Meu perfil | O Claude, uma vez (e quando você atualizar o currículo) | alguns minutos |
-| Buscar vagas | Buscar | O painel, sem o Claude | 1 a 3 minutos |
+| Buscar vagas | Vagas novas | O painel, sem o Claude | 1 a 3 minutos |
+| Classificar as vagas novas | Vagas novas | O Claude | alguns minutos |
 | Separar as vagas | Vagas novas | Você | o quanto quiser |
 | Avaliar uma vaga | Me interessam | O Claude | 2 a 3 minutos |
 | Fazer currículo e carta | Me interessam | O Claude | até meia hora |
@@ -62,7 +64,26 @@ deixe aberta**, pode minimizar. Para fechar o painel, feche essa janela.
 Se o navegador não abrir sozinho, copie o endereço que aparece na janela preta
 (`http://127.0.0.1:8765/`) e cole no navegador. Esse endereço só funciona no seu computador.
 
-Enquanto o seu perfil não existe, o painel abre direto na aba **Meu perfil**.
+O painel abre no tema claro. No canto do cabeçalho, escolha **Escuro**, ou **Automático** para
+seguir o modo do sistema; a escolha fica guardada no navegador.
+
+---
+
+## Início
+
+É a primeira tela. Em cima, o **próximo passo**: a primeira etapa do caminho que tem algo
+esperando por você, com um botão que leva direto para lá. Na ordem:
+
+1. montar o perfil, enquanto ele não existe;
+2. buscar, quando não há vaga nova;
+3. classificar as vagas novas que ainda não têm nota;
+4. separar as de encaixe alto ou médio;
+5. avaliar as vagas que te interessam;
+6. revisar e enviar as candidaturas em rascunho.
+
+Embaixo, quatro quadros com os números de cada etapa: vagas novas (quantas com bom encaixe e
+quantas sem nota), as que te interessam (quantas a avaliar e quantas prontas para currículo e
+carta), as candidaturas por situação e o perfil. Clicar num quadro abre a aba dele.
 
 ---
 
@@ -70,6 +91,12 @@ Enquanto o seu perfil não existe, o painel abre direto na aba **Meu perfil**.
 
 O ponto de partida. O perfil é o que a busca, a avaliação e o currículo usam para saber quem
 você é e o que você procura.
+
+Com o perfil pronto, a aba abre num **resumo** (cargos, níveis, setores, modelo de trabalho,
+regimes, pretensão, idiomas, cidade), e os passos abaixo ficam recolhidos em **Documentos,
+respostas e montagem do perfil**: clique ali, ou em **Editar documentos e respostas**, para
+mudar algo. Enquanto o perfil não existe, ou quando o Claude acabou de preencher o formulário,
+os passos já vêm abertos.
 
 **Aviso de privacidade (no topo).** O perfil vai para arquivos do projeto que o git publica.
 O painel confere para onde o projeto está ligado:
@@ -137,30 +164,44 @@ substituída.
 
 ---
 
-## 2. Buscar
+## 2. Vagas novas
+
+Tudo o que vem da busca, em três partes: a busca, a triagem e a lista.
+
+### Nova busca
 
 Roda as buscas do seu perfil nos portais instalados (Gupy, Sólides, VAGAS.com, LinkedIn e
-outros). **Não usa o Claude**, então não gasta o seu plano.
+outros). **Não usa o Claude**, então não gasta o seu plano. Fica recolhida no topo da aba;
+clique em **Nova busca** para abrir.
 
 - **Prioridades:** as buscas vêm agrupadas por prioridade (montadas pelo perfil). As
   prioridades 1 e 2 vêm marcadas.
 - **Publicadas nos últimos:** 7, 14 ou 30 dias.
 - **Buscar vagas:** leva de 1 a 3 minutos; dá para continuar usando o computador.
 
-No fim, aparece um resumo por portal e o link **Ver as vagas novas**. As vagas que você já
-viu (marcadas aqui, no `/scrape` ou que já estão em Candidaturas) não voltam.
+No fim, aparece um resumo por portal e a lista embaixo se atualiza. As vagas que você já viu
+(marcadas aqui, no `/scrape` ou que já estão em Candidaturas) não voltam.
 
-> Pela conversa: `/scrape` faz a mesma busca e já comenta o encaixe de cada vaga.
+### Classificar com o Claude
 
----
+A busca traz o que os portais acharam, bom e ruim misturado. **Classificar com o Claude** faz a
+triagem que o `/scrape` faz na conversa: o Claude lê cada vaga nova (até 40 por vez), compara
+com o seu perfil e dá a cada uma:
+- um **encaixe**: alto (as suas competências centrais), médio (vizinha da sua experiência) ou
+  baixo (falta algo importante, ou bate num deal-breaker: modelo de trabalho, nível, idioma);
+- uma **nota** de 0 a 100;
+- o **motivo**, numa frase: o que bate, o que falta ou o deal-breaker.
 
-## 3. Vagas novas
+A lista passa a vir da maior nota para a menor, e o filtro **Encaixe** mostra só as de encaixe
+alto ou médio. É uma triagem rápida, pelo texto que a busca trouxe: a nota completa vem depois,
+em **Avaliar com o Claude**. As notas ficam gravadas; numa busca nova, o botão classifica só as
+vagas que ainda não têm nota.
 
-A lista do que a busca encontrou e você ainda não separou.
+### A lista
 
-**Filtros:** texto (cargo ou empresa), modelo de trabalho, portal e **só sem avisos**.
+**Filtros:** encaixe, texto (cargo ou empresa), modelo de trabalho, portal e **só sem avisos**.
 
-**Cada cartão mostra:** cargo, empresa, local, modelo, nível, regime, salário (quando o
+**Cada cartão mostra:** a nota e o motivo (depois da triagem), cargo, empresa, local, modelo, nível, regime, salário (quando o
 anúncio informa), data de publicação e em que portais a vaga apareceu. Um **⚠ aviso** aparece
 quando o texto da vaga contradiz o rótulo do portal ou traz algo que pesa:
 - "remoto" no portal, mas híbrido ou presencial no texto;
@@ -181,9 +222,15 @@ As duas escolhas ficam gravadas: a vaga some desta lista e das próximas buscas.
 
 ---
 
-## 4. Me interessam
+## 3. Me interessam
 
-As vagas que você guardou. Cada uma tem três botões.
+As vagas que você guardou, da maior nota para a menor (a da avaliação completa, ou a da
+triagem enquanto não há avaliação). Cada cartão mostra em que etapa a vaga está
+(**Avaliar → Currículo e carta → Revisar e enviar**) e um botão em destaque com a próxima ação;
+as outras ficam discretas ao lado. Quando a avaliação dá menos de 40, a ação em destaque vira
+**Tirar da lista**, e o currículo continua possível em **Fazer currículo mesmo assim**.
+
+**Tirar da lista:** a vaga sai de Me interessam e fica como descartada, sem voltar nas buscas.
 
 **Avaliar com o Claude** (2 a 3 minutos). O Claude lê a vaga e compara com o seu perfil. A
 avaliação aparece no cartão:
@@ -216,18 +263,19 @@ por você, quando:
 
 **Confira sempre o currículo e a carta antes de enviar.**
 
-**Copiar pedido:** copia `/apply <link da vaga>` para você colar na conversa com o Claude, no
-VS Code, e fazer tudo isso acompanhando e corrigindo junto.
+**Fazer pela conversa:** copia `/apply <link da vaga>` para você colar na conversa com o Claude,
+no VS Code, e fazer tudo isso acompanhando e corrigindo junto.
 
 O Claude trabalha **numa coisa por vez**: enquanto ele avalia ou escreve, os outros botões do
 Claude ficam desligados, e uma linha mostra o que ele está fazendo e desde quando.
 
 ---
 
-## 5. Candidaturas
+## 4. Candidaturas
 
-A tabela das suas candidaturas (`job_search_tracker.csv`): data, empresa, cargo, situação e
-nota de encaixe. As situações:
+Um cartão por candidatura (`job_search_tracker.csv`), as abertas primeiro: situação, cargo,
+empresa, data, nota de encaixe, uma dica do que fazer agora e os links **Currículo (PDF)** e
+**Carta (PDF)**, que abrem os arquivos gerados para você revisar antes de enviar. As situações:
 
 | No painel | Quer dizer |
 |---|---|
@@ -237,12 +285,18 @@ nota de encaixe. As situações:
 | Proposta / Contratação | Chegou lá |
 | Não seguiu / Sem resposta / Desisti / Proposta recusada | Encerrada |
 
-Para mudar a situação depois de enviar, escreva na conversa com o Claude
-`/outcome <empresa>`. Para se preparar para uma entrevista marcada, `/interview`.
+**Os dois avanços simples vão por botão:** **Marquei como enviada** (de Rascunho para Enviada)
+e **Chamaram para entrevista** (de Enviada para Entrevista). O painel muda a situação no tracker
+e anota a data nas notas.
+
+**O resultado vai pela conversa:** **Registrar resultado** copia `/outcome <empresa>` para você
+colar no Claude. É de propósito: além de mudar a situação, o `/outcome` guarda a etapa
+alcançada e o que você aprendeu num arquivo da candidatura, que o `/setup` usa para calibrar
+as notas das próximas avaliações. Para se preparar para uma entrevista marcada, `/interview`.
 
 ---
 
-## 6. CLT × PJ
+## 5. CLT × PJ
 
 O mesmo número por mês é muito dinheiro diferente em CLT e em PJ. Esta aba faz a conta do ano
 inteiro, com as tabelas de 2026, sem o Claude e sem sair do seu computador.
@@ -280,7 +334,7 @@ python3 tools/clt_pj.py --clt 10000 --vr 800 --saude 500 --pj 14000
 | A página não abre | A janela preta precisa estar aberta. Abra o `abrir-painel.bat` de novo e cole `http://127.0.0.1:8765/` no navegador |
 | "não consegui abrir a porta 8765" | Outro painel já está aberto: use aquele, ou feche a outra janela preta |
 | "Não achei o Claude Code neste computador" | Os botões do Claude dependem do Claude Code instalado (Passo 4 do [COMECE-AQUI.md](COMECE-AQUI.md)). A busca funciona sem ele |
-| "O Claude não terminou: ..." | A mensagem diz o motivo. Tente de novo; se repetir, faça pela conversa (botão **Copiar pedido**) |
+| "O Claude não terminou: ..." | A mensagem diz o motivo. Tente de novo; se repetir, faça pela conversa (link **Fazer pela conversa**) |
 | "o Claude já está trabalhando em outro pedido" | Espere o pedido atual terminar: a linha de status mostra o que ele está fazendo |
 | "Ainda não há buscas no seu perfil" | Monte o perfil na aba **Meu perfil** (ou `/setup` na conversa) |
 | A avaliação abre com "⚠ O filtro de integridade não rodou" | Não confie no veredito de segurança dessa avaliação: rode de novo ou avalie pela conversa |
@@ -301,7 +355,10 @@ vindos de outro endereço são recusados.
 | Botão | O que roda por trás |
 |---|---|
 | Buscar vagas | `tools/scrape_run.py search` (as CLIs dos portais), sem o Claude |
-| Me interessa / Descartar | grava em `job_scraper/seen_jobs.json` |
+| Classificar com o Claude | `claude -p`: o Passo 3 do `/scrape` nas vagas novas sem nota; o painel confere cada nota e grava em `triagem.json` |
+| Me interessa / Descartar / Tirar da lista | grava em `job_scraper/seen_jobs.json` |
+| Marquei como enviada / Chamaram para entrevista | muda a situação em `job_search_tracker.csv` e anota a data, sem o Claude |
+| Currículo (PDF) / Carta (PDF) | abre o PDF que o tracker cita; o painel só serve `cv/main_*.pdf` e `cover_letters/cover_*.pdf` de candidaturas registradas |
 | Enviar um PDF / Preencher pelos documentos | `claude -p`: lê os documentos e devolve as respostas do formulário; o painel confere cada campo e só preenche os vazios |
 | Montar meu perfil | `claude -p`: o Caminho A do `/setup`, com o formulário no lugar das perguntas; grava só a proposta |
 | Comparar (CLT × PJ) | `tools/clt_pj.py`, sem o Claude: só a conta, com os números que você digitou |
@@ -323,6 +380,7 @@ nem servidor externo. O pedido vai pela entrada padrão, nunca na linha de coman
 | Resultado da busca | pasta temporária do sistema (`painel_busca_<data>.json`) | Não |
 | Vagas vistas e separadas | `job_scraper/seen_jobs.json` | Não |
 | Avaliações e relatórios do Claude | `documents/applications/_painel/` | Não |
+| Notas da triagem | `documents/applications/_painel/triagem.json` | Não |
 | Currículo e carta gerados | `cv/main_<empresa>_<cargo>.tex/.pdf`, `cover_letters/cover_<empresa>_<cargo>.tex/.pdf` | Não |
 | Vaga arquivada | `documents/applications/<empresa>_<cargo>/job_posting.md` | Não |
 | Candidaturas | `job_search_tracker.csv` | Não |
@@ -336,6 +394,7 @@ um arquivo próprio para cada botão. O que não estiver liberado é negado.
 |---|---|---|
 | Avaliar / Fazer currículo e carta | `tools/painel/claude-settings.json` | ler; pesquisar na web; gravar só o currículo, a carta, a pesquisa de empresas, `documents/applications/` e o tracker; compilar só pelo `tools/compile_doc.py`, que desliga a execução de comandos pelo LaTeX |
 | Preencher o formulário | `tools/painel/claude-settings-formulario.json` | só ler. Não grava nada: a resposta volta para o painel, que descarta o que não for campo do formulário ou opção válida |
+| Classificar com o Claude | `tools/painel/claude-settings-classificar.json` | só ler o perfil. Sem web, sem shell e sem gravar: o texto das vagas é de terceiros e vai no pedido marcado como dado, nunca como instrução. As vagas vêm do arquivo da busca, nunca do navegador; a resposta volta para o painel, que aceita só notas de 0 a 100 para as vagas do lote |
 | Montar meu perfil | `tools/painel/claude-settings-perfil.json` | ler; gravar só em `documents/perfil/proposta/`, nunca no perfil. **Sem web e sem shell**: o currículo é lido, nunca buscado, e nada sai do computador. Quem grava o perfil é o painel, quando você clica em Aplicar |
 
 O `tools/security_guards.py` confere esses arquivos em todo PR. O [SECURITY.md](SECURITY.md)
