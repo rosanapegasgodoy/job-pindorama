@@ -126,6 +126,16 @@ class Data(unittest.TestCase):
         os.utime(answers, (out.stat().st_mtime + 5,) * 2)
         self.assertFalse(painel.suggestion(self.dir, answers)["nova"])
 
+    def test_offers_are_checked_before_the_math(self):
+        r = painel.compare_offers({"clt": 13500, "vr": 900, "pj": 20000, "meses": 11})
+        self.assertIn("diferenca_anual", r)
+        self.assertIn("## Premissas", r["relatorio"])
+        self.assertIn("pj_equivalente", painel.compare_offers({"clt": 13500}))
+        for bad in ({}, {"clt": "13500"}, {"clt": True}, {"clt": -1}, {"clt": 0}, {"pj": 9e9},
+                    {"pj": 20000, "meses": 11.5}, {"pj": 20000, "meses": 14}, {"clt": 5000, "dependentes": 21}):
+            with self.assertRaises(ValueError, msg=bad):
+                painel.compare_offers(bad)
+
     def test_claude_answer_files_are_named_by_hash_inside_the_folder(self):
         f = painel.claude_file("https://x/../../etc", "avaliar", self.dir)
         self.assertEqual(f.parent, self.dir)
@@ -239,6 +249,14 @@ class Server(unittest.TestCase):
         status, data, _ = self.request("POST", "/api/profile-apply", {}, h)
         self.assertEqual((status, json.loads(data)["applied"]), (200, ["cv/main_example.tex"]))
         self.assertEqual((self.profile_root / "cv" / "main_example.tex").read_text(encoding="utf-8"), "novo\n")
+
+    def test_clt_pj_needs_the_token_and_good_numbers(self):
+        h = {"X-Painel-Token": self.token, "Content-Type": "application/json"}
+        self.assertEqual(self.request("POST", "/api/clt-pj", {"clt": 13500})[0], 403)
+        status, data, _ = self.request("POST", "/api/clt-pj", {"clt": 13500, "pj": 20000}, h)
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(data)["pj"]["anexo"], "III")
+        self.assertEqual(self.request("POST", "/api/clt-pj", {"clt": "muito"}, h)[0], 400)
 
     def test_only_uploads_get_the_big_body_limit(self):
         self.assertEqual(painel.body_limit("/api/upload"), painel.MAX_UPLOAD_BODY)

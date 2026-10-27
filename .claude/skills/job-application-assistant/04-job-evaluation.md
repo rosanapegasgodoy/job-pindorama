@@ -1,5 +1,5 @@
 ---
-framework_version: 1.3.1
+framework_version: 1.4.0
 ---
 
 # Método de avaliação de vagas
@@ -187,6 +187,22 @@ A vaga faz a carreira avançar e tem tarefas que dão energia?
 No Brasil, o mesmo valor mensal significa coisas muito diferentes conforme o regime. **Nunca
 compare uma vaga CLT com uma PJ pelo número do anúncio.** Identifique o regime (na Gupy, o campo
 `contract` da busca já informa) e compare pela remuneração total anual.
+
+**Faça a conta com `tools/clt_pj.py`, nunca de cabeça.** Ele aplica as tabelas do ano (INSS,
+IR com a redução da Lei 15.270, PLR, Simples Nacional com o Fator R) e dá o total anual de cada
+lado e o valor equivalente do outro:
+
+```bash
+python3 tools/clt_pj.py --clt <salário> [--vr N] [--saude N] [--outros N] [--plr N]
+python3 tools/clt_pj.py --pj <nota mensal> [--meses 11] [--contador 300] [--beneficios-pj N]
+python3 tools/clt_pj.py --clt <pretensão CLT do perfil> --pj <valor da vaga>
+```
+
+Use os números da vaga; o que ela não informa fica de fora, nunca estimado. Numa vaga PJ, rode
+com `--pj` e compare o **CLT equivalente** com a pretensão CLT do perfil; numa vaga CLT, o **PJ
+equivalente** mostra quanto uma contraproposta PJ precisaria pagar. Cite o total anual dos dois
+lados e as premissas que pesaram (meses faturados, contador). Se o comando não rodar, diga isso e
+use as regras abaixo, deixando claro que é uma estimativa. As regras explicam o que a conta faz:
 
 **CLT (efetivo)** — por ano, além de 12 salários:
 - **13º salário:** +1 salário

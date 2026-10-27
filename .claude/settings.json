@@ -39,6 +39,8 @@
       "Bash(python3 tools/posting_guard.py:*)",
       "Bash(python tools/posting_signals.py:*)",
       "Bash(python3 tools/posting_signals.py:*)",
+      "Bash(python tools/clt_pj.py:*)",
+      "Bash(python3 tools/clt_pj.py:*)",
       "Bash(python tools/scrape_run.py:*)",
       "Bash(python3 tools/scrape_run.py:*)"
     ],

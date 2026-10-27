@@ -15,6 +15,17 @@ per-file diff commands.
 
 ### Added
 
+- **`tools/clt_pj.py`, the CLT × PJ calculator, and a "CLT × PJ" panel tab** - dimension 6 of
+  `04-job-evaluation.md` had the rules in prose and the model did the arithmetic in its head. The
+  tool computes a full year on each side with the 2026 tables (INSS; IRRF with the Lei 15.270
+  exemption and reduction and the simplified discount; the PLR table; FGTS, 13th salary and
+  vacation with 1/3; Simples Nacional Anexos III/V with the Fator R, pró-labore INSS and IRRF,
+  accountant, unbilled months) and the other side's monthly equivalent, printing its assumptions
+  and flagging the 10% dividend withholding above R$ 50,000 a month. Tables checked against the
+  Receita Federal 2026 page; sources in the module docstring. The evaluation now runs it
+  (allowed in `settings.json` and the guard's allowlist; `04-job-evaluation.md` 1.4.0), and the
+  panel's new tab calls it through `/api/clt-pj` with validated numbers, no Claude involved.
+
 - **The panel fills the profile form from the uploaded PDFs** - uploading a CV or LinkedIn PDF
   starts a read-only `claude -p` run (`tools/painel/claude-settings-formulario.json`: Read, Glob,
   Grep) that returns the form answers as JSON, also drawing on an existing profile. The panel

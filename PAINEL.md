@@ -31,6 +31,7 @@ flowchart TD
     D -->|Sim| I2[Fazer currículo e carta]
     I2 --> C[Candidaturas]
     C --> E([Você confere e envia à empresa])
+    E -.->|Chegou uma proposta| CP[CLT × PJ]
 ```
 
 | Etapa | Aba | Quem faz | Quanto tempo |
@@ -42,6 +43,7 @@ flowchart TD
 | Fazer currículo e carta | Me interessam | O Claude | até meia hora |
 | Acompanhar | Candidaturas | O painel | - |
 | Enviar a candidatura | - | **Você**, no site da empresa | - |
+| Comparar propostas | CLT × PJ | O painel, sem o Claude | na hora |
 
 **O painel nunca envia nada a empresa nenhuma.** Quem se candidata é você, com os arquivos
 que ele preparou.
@@ -240,6 +242,37 @@ Para mudar a situação depois de enviar, escreva na conversa com o Claude
 
 ---
 
+## 6. CLT × PJ
+
+O mesmo número por mês é muito dinheiro diferente em CLT e em PJ. Esta aba faz a conta do ano
+inteiro, com as tabelas de 2026, sem o Claude e sem sair do seu computador.
+
+- **Só o CLT** (o salário, ou a sua pretensão): mostra quanto uma nota PJ precisa ter por mês
+  para empatar.
+- **Só o PJ** (o valor da nota): mostra a que salário CLT ele equivale.
+- **Os dois**: compara e diz quanto um dá a mais por ano.
+
+| Lado | O que entra na conta |
+|---|---|
+| CLT | 11 salários e 1 mês de férias com 1/3, o 13º, todos líquidos de INSS e IR (com a isenção até R$ 5 mil e a redução até R$ 7.350 de 2026); a PLR pela tabela própria; o FGTS; VR/VA, plano de saúde e outros benefícios pelo valor que a empresa paga |
+| PJ | a nota de cada mês trabalhado; o DAS do Simples Nacional (Anexo III, mantendo o pró-labore em 28% do faturamento, o Fator R; ou Anexo V, se você informar um pró-labore menor); INSS de 11% e IR sobre o pró-labore; contador e custos; os benefícios do contrato. O resto sai como lucro, isento |
+
+Dois números mudam muito o resultado, e o painel mostra os dois:
+- **Meses faturados:** 11 por padrão, porque em PJ o mês de descanso não é pago. Se o contrato
+  paga o descanso, use 12.
+- **Contador:** R$ 300 por mês por padrão. Troque pelo valor real.
+
+A conta é uma referência para negociar, não uma consultoria tributária: a alíquota depende da
+atividade da sua empresa, o ISS do município pode mudar a conta, e a reforma tributária muda
+regras até 2033. **Confirme com um contador antes de assinar.** A mesma conta roda na avaliação
+das vagas (`tools/clt_pj.py`) e na linha de comando:
+
+```bash
+python3 tools/clt_pj.py --clt 10000 --vr 800 --saude 500 --pj 14000
+```
+
+---
+
 ## Quando algo não funciona
 
 | O que acontece | O que fazer |
@@ -271,6 +304,7 @@ vindos de outro endereço são recusados.
 | Me interessa / Descartar | grava em `job_scraper/seen_jobs.json` |
 | Enviar um PDF / Preencher pelos documentos | `claude -p`: lê os documentos e devolve as respostas do formulário; o painel confere cada campo e só preenche os vazios |
 | Montar meu perfil | `claude -p`: o Caminho A do `/setup`, com o formulário no lugar das perguntas; grava só a proposta |
+| Comparar (CLT × PJ) | `tools/clt_pj.py`, sem o Claude: só a conta, com os números que você digitou |
 | Aplicar ao meu perfil / Descartar | o próprio painel copia a proposta para o lugar, ou a apaga, sem o Claude |
 | Avaliar com o Claude | `claude -p`: os Passos 0 e 1 do `/apply` |
 | Fazer currículo e carta | `claude -p`: os Passos 2 a 6b do `/apply`, a partir da avaliação gravada |

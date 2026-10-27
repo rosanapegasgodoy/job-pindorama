@@ -104,6 +104,7 @@
     <button role="tab" data-tab="vagas" aria-selected="false">Vagas novas <span id="count-new"></span></button>
     <button role="tab" data-tab="interesse" aria-selected="false">Me interessam</button>
     <button role="tab" data-tab="candidaturas" aria-selected="false">Candidaturas</button>
+    <button role="tab" data-tab="cltpj" aria-selected="false">CLT × PJ</button>
   </nav>
 </header>
 
@@ -188,6 +189,37 @@
 
   <section id="tab-candidaturas" role="tabpanel" hidden>
     <div id="candidaturas"></div>
+  </section>
+
+  <section id="tab-cltpj" role="tabpanel" hidden>
+    <div class="panel">
+      <h2>Quanto vale cada proposta no ano</h2>
+      <p class="muted">Preencha um lado para ver quanto o outro precisa pagar para empatar, ou os dois para comparar.
+        A conta usa as tabelas de 2026 de INSS, IR, PLR e Simples Nacional, sem o Claude. Valores em reais, sem pontos.</p>
+      <form id="cltpj-form" class="perfil">
+        <fieldset><legend>CLT</legend>
+          <label class="field" for="cp-clt"><span>Salário bruto por mês</span><input type="number" id="cp-clt" min="0" step="0.01" placeholder="13500"></label>
+          <label class="field" for="cp-vr"><span>VR/VA por mês</span><input type="number" id="cp-vr" min="0" step="0.01"></label>
+          <label class="field" for="cp-saude"><span>Plano de saúde por mês (o que a empresa paga)</span><input type="number" id="cp-saude" min="0" step="0.01"></label>
+          <label class="field" for="cp-outros"><span>Outros benefícios por mês</span><input type="number" id="cp-outros" min="0" step="0.01"></label>
+          <label class="field" for="cp-plr"><span>PLR ou bônus por ano</span><input type="number" id="cp-plr" min="0" step="0.01"></label>
+        </fieldset>
+        <fieldset><legend>PJ</legend>
+          <label class="field" for="cp-pj"><span>Valor da nota por mês</span><input type="number" id="cp-pj" min="0" step="0.01" placeholder="20000"></label>
+          <label class="field" for="cp-meses"><span>Meses faturados no ano</span><input type="number" id="cp-meses" min="1" max="13" step="1" value="11">
+            <div class="help">11 deixa um mês de descanso sem receber, como as férias do CLT. Use 12 se o contrato paga o descanso.</div></label>
+          <label class="field" for="cp-contador"><span>Contador por mês</span><input type="number" id="cp-contador" min="0" step="0.01" value="300"></label>
+          <label class="field" for="cp-custos"><span>Outros custos da empresa por mês</span><input type="number" id="cp-custos" min="0" step="0.01"></label>
+          <label class="field" for="cp-beneficios_pj"><span>Benefícios que o contrato PJ paga por mês</span><input type="number" id="cp-beneficios_pj" min="0" step="0.01"></label>
+          <label class="field" for="cp-pro_labore"><span>Pró-labore por mês (vazio: o menor que mantém o Anexo III)</span><input type="number" id="cp-pro_labore" min="0" step="0.01"></label>
+        </fieldset>
+        <fieldset><legend>Os dois</legend>
+          <label class="field" for="cp-dependentes"><span>Dependentes no IR</span><input type="number" id="cp-dependentes" min="0" max="20" step="1" value="0"></label>
+        </fieldset>
+      </form>
+      <div class="row"><button class="btn" id="btn-cltpj">Comparar</button> <span id="cltpj-status" aria-live="polite"></span></div>
+    </div>
+    <div id="cltpj-out"></div>
   </section>
 </main>
 
@@ -728,6 +760,24 @@ async function loadApplications() {
     el("td", { text: a.fit_rating || "" })));
   box.replaceChildren(el("div", { class: "panel tablewrap" }, el("table", {}, el("thead", {}, head), el("tbody", {}, ...rows))));
 }
+
+// ---- CLT × PJ ----
+const CAMPOS_CLTPJ = ["clt", "vr", "saude", "outros", "plr", "pj", "meses", "contador", "custos", "beneficios_pj",
+  "pro_labore", "dependentes"];
+document.getElementById("btn-cltpj").addEventListener("click", async () => {
+  const body = {};
+  for (const k of CAMPOS_CLTPJ) {
+    const v = document.getElementById("cp-" + k).value.trim();
+    if (v !== "") body[k] = Number(v);
+  }
+  const st = document.getElementById("cltpj-status");
+  const out = document.getElementById("cltpj-out");
+  try {
+    const r = await api("/api/clt-pj", body);
+    st.textContent = "";
+    out.replaceChildren(el("div", { class: "panel" }, el("div", { class: "answer" }, markdown(r.relatorio))));
+  } catch (e) { st.textContent = "Não consegui calcular: " + e.message; }
+});
 
 refreshStatus().then(() => api("/api/status")).then((s) => {
   if (s.search.running) polling = setInterval(refreshStatus, 2000);

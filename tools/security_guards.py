@@ -111,6 +111,10 @@ ALLOWED_PERMISSIONS = {
     # Reads a file or stdin, prints findings, writes nothing, never fetches.
     "Bash(python tools/posting_signals.py:*)",
     "Bash(python3 tools/posting_signals.py:*)",
+    # The CLT x PJ arithmetic (04-job-evaluation.md, dimension 6). Takes numbers
+    # as arguments and prints; reads no file, writes nothing, never fetches.
+    "Bash(python tools/clt_pj.py:*)",
+    "Bash(python3 tools/clt_pj.py:*)",
     # The mechanical half of /scrape. Runs only the installed portal CLIs (fixed
     # argv per query line), writes its results outside the repo and appends to
     # job_scraper/seen_jobs.json; never fetches anything else.

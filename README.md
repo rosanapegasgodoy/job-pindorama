@@ -360,6 +360,10 @@ A cópia é manual de propósito: um instalador que buscasse skills de repositó
 
 A ferramenta de salário funciona com os dados que você fornecer (pesquisas salariais, guias de consultorias, exportações do Glassdoor, pesquisa própria). Veja `tools/README_SALARY_TOOL.md` para o formato. Sem dados, o passo de salário é simplesmente pulado, e a avaliação usa fontes públicas, dizendo qual.
 
+### Comparar CLT e PJ
+
+`tools/clt_pj.py` faz a conta do ano inteiro dos dois lados com as tabelas de 2026: INSS, IR (com a isenção até R$ 5 mil e a redução da Lei 15.270), PLR, FGTS, 13º e férias com 1/3 no CLT; DAS do Simples Nacional com o Fator R, INSS e IR do pró-labore, contador e meses sem faturar no PJ. Dá o total de cada lado e o valor equivalente do outro (`python3 tools/clt_pj.py --clt 10000 --pj 14000`). A avaliação de vagas usa essa conta em vez de estimar, e a aba **CLT × PJ** do painel faz o mesmo com botões. As premissas saem junto com o resultado; confirme com um contador antes de assinar.
+
 ### Recomeçar do zero
 
 Para apagar os dados do perfil e recomeçar:

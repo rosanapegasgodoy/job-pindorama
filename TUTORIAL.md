@@ -273,7 +273,8 @@ mais direta no primeiro parágrafo."* Ele refaz e gera o PDF de novo.
 
 > **Dica sobre pretensão salarial:** quando a vaga não informa salário, use a faixa do seu
 > perfil. Lembre que CLT e PJ não se comparam pelo número do anúncio: em PJ você paga
-> impostos e não tem 13º, férias nem FGTS. A avaliação mostra a conta.
+> impostos e não tem 13º, férias nem FGTS. A avaliação mostra a conta, e a aba **CLT × PJ**
+> do painel faz a mesma conta com os números que você quiser.
 
 ---
 
@@ -306,6 +307,24 @@ quinta") e escreva **`/interview`**. O Claude monta um material para aquela etap
 
 No fim, ele oferece uma **simulação**: faz as perguntas como quem entrevista e comenta as
 suas respostas.
+
+### Chegou uma proposta: CLT × PJ
+
+A Ana chegou à última etapa e recebeu uma proposta PJ de R$ 14 mil por mês. Ela tinha pedido
+R$ 10 mil em CLT, com VR de R$ 800 e plano de saúde de R$ 500. Na aba **CLT × PJ** do painel,
+preencheu os dois lados e clicou em **Comparar**:
+
+```
+CLT  R$ 10.000 + benefícios ..... R$ 125.434 no ano (com FGTS e benefícios)
+     PJ equivalente ............. R$ 12.902 por mês de nota
+PJ   R$ 14.000 × 11 meses ....... R$ 136.417 no ano
+     CLT equivalente ............ R$ 11.023 por mês de salário
+Resultado: o PJ dá R$ 10.983 a mais por ano
+```
+
+A proposta passa da pretensão dela, mas com folga de uns 9%, não os 40% que o "R$ 14 mil
+contra R$ 10 mil" sugere. Antes de responder, ela pediu ao contador para confirmar a alíquota
+da atividade dela.
 
 ---
 

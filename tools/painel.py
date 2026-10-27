@@ -53,6 +53,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import clt_pj  # noqa: E402
 import painel_perfil  # noqa: E402
 import scrape_run  # noqa: E402
 
@@ -330,6 +331,29 @@ def suggestion(base: Path = CLAUDE_DIR, answers_path: Path = painel_perfil.ANSWE
     return {**found, "nova": path.stat().st_mtime > saved_at}
 
 
+def compare_offers(body: dict) -> dict:
+    """A aba CLT × PJ: os números do navegador conferidos, a conta do tools/clt_pj.py e o relatório."""
+    def num(key, default=None, positive=False):
+        value = body.get(key)
+        if value is None or value == "":
+            return default
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value < 1e8 \
+                or (positive and value == 0):
+            raise ValueError(f"valor inválido em {key}")
+        return float(value)
+
+    months, dependents = num("meses", 11), num("dependentes", 0)
+    if months != int(months) or not 1 <= months <= 13 or dependents != int(dependents) or dependents > 20:
+        raise ValueError("meses vai de 1 a 13, e dependentes de 0 a 20")
+    clt_opts = {"vr": num("vr", 0), "health": num("saude", 0), "other": num("outros", 0), "plr": num("plr", 0),
+                "dependents": int(dependents)}
+    pj_opts = {"months": int(months), "pro_labore": num("pro_labore", positive=True),
+               "accountant": num("contador", 300), "costs": num("custos", 0), "benefits": num("beneficios_pj", 0),
+               "dependents": int(dependents)}
+    result = clt_pj.compare(num("clt", positive=True), num("pj", positive=True), clt_opts, pj_opts)
+    return {**result, "relatorio": clt_pj.report(result)}
+
+
 def body_limit(path: str) -> int:
     """Só o envio de documentos aceita um corpo grande."""
     return MAX_UPLOAD_BODY if path.split("?", 1)[0] == "/api/upload" else MAX_BODY
@@ -559,6 +583,11 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 if not job.start(prios, jobage):
                     return self._send(409, {"error": "já há uma busca em andamento"})
                 return self._send(202, {"started": True})
+            if path == "/api/clt-pj":
+                try:
+                    return self._send(200, compare_offers(body))
+                except ValueError as exc:
+                    return self._send(400, {"error": str(exc)})
             if path == "/api/mark":
                 urls = [u for u in body.get("urls", []) if isinstance(u, str)]
                 try:
