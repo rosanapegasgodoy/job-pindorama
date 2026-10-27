@@ -142,35 +142,61 @@ class Data(unittest.TestCase):
 
     def test_triage_answer_is_checked_and_merged(self):
         ids = {"v1": "https://x/1", "v2": "https://x/2", "v3": "https://x/3"}
-        text = ('```json\n{"vagas": [{"id": "v1", "encaixe": "alto", "nota": 81.6, "motivo": "PM de EdTech"},'
+        text = ('```json\n{"vagas": [{"id": "v1", "encaixe": "alto", "nota": 81.6, "motivo": "PM de EdTech",'
+                '"interesse": "alto", "nota_interesse": 90, "motivo_interesse": "EdTech com IA"},'
                 '{"id": "v2", "encaixe": "otimo", "nota": 90}, {"id": "v3", "encaixe": "baixo", "nota": 140},'
                 '{"id": "v9", "encaixe": "alto", "nota": 99}, {"id": "v3", "encaixe": "baixo", "nota": true}]}\n```')
         scores = painel.parse_triage(text, ids)
         self.assertEqual(list(scores), ["https://x/1"])
         self.assertEqual((scores["https://x/1"]["nota"], scores["https://x/1"]["motivo"]), (82, "PM de EdTech"))
+        self.assertEqual((scores["https://x/1"]["interesse"], scores["https://x/1"]["nota_interesse"]), ("alto", 90))
         self.assertEqual(painel.parse_triage("não deu", ids), {})
         painel.save_scores(scores, self.dir)
         painel.save_scores({"https://x/2": {"encaixe": "baixo", "nota": 10}}, self.dir)
         self.assertEqual(set(painel.load_scores(self.dir)), {"https://x/1", "https://x/2"})
-        self.assertEqual(painel.to_triage([{"url": "https://x/1"}, {"url": "https://x/5"}], painel.load_scores(self.dir)),
-                         [{"url": "https://x/5"}])
+        # x/2 tem só a nota de encaixe, de antes do interesse: volta para a triagem.
+        self.assertEqual(painel.to_triage([{"url": "https://x/1"}, {"url": "https://x/2"}, {"url": "https://x/5"}],
+                                          painel.load_scores(self.dir)), [{"url": "https://x/2"}, {"url": "https://x/5"}])
+
+    def test_triage_keeps_the_fit_when_the_interest_is_broken(self):
+        ids = {"v1": "https://x/1", "v2": "https://x/2"}
+        text = ('{"vagas": [{"id": "v1", "encaixe": "medio", "nota": 55, "interesse": "otimo", "nota_interesse": 80},'
+                '{"id": "v2", "encaixe": "medio", "nota": 55, "interesse": "alto", "nota_interesse": 101}]}')
+        scores = painel.parse_triage(text, ids)
+        self.assertEqual(set(scores), {"https://x/1", "https://x/2"})
+        self.assertTrue(all("interesse" not in s for s in scores.values()))
+
+    def test_priority_group_crosses_fit_and_interest(self):
+        cases = {("alto", "alto"): "prioridade", ("medio", "alto"): "prioridade", ("alto", "medio"): "plano_b",
+                 ("medio", "baixo"): "plano_b", ("baixo", "alto"): "aposta", ("baixo", "medio"): "descarte"}
+        for (fit, interest), group in cases.items():
+            self.assertEqual(painel.priority_group({"encaixe": fit, "interesse": interest}), group, (fit, interest))
+        self.assertIsNone(painel.priority_group({"encaixe": "alto", "nota": 90}))
+        self.assertIsNone(painel.priority_group(None))
+        scores = {"a": {"encaixe": "alto", "nota": 90, "interesse": "alto", "nota_interesse": 85}}
+        self.assertEqual(painel.triage_of(scores, "a")["grupo"], "prioridade")
+        self.assertIsNone(painel.triage_of(scores, "b"))
+        self.assertIsNone(painel.triage_of(scores, None))
 
     def test_summary_counts_what_waits_at_each_step(self):
         new = [{"url": "a"}, {"url": "b"}, {"url": "c"}]
-        scores = {"a": {"encaixe": "alto", "nota": 80}, "b": {"encaixe": "baixo", "nota": 20}}
+        scores = {"a": {"encaixe": "alto", "nota": 80, "interesse": "alto", "nota_interesse": 75},
+                  "b": {"encaixe": "baixo", "nota": 20, "interesse": "baixo", "nota_interesse": 10}}
         interest = [{"claude": {"avaliar": "x", "redigir": None}}, {"claude": {"avaliar": None}}, {}]
         apps = [{"status": "drafted"}, {"status": "applied"}, {"status": "no response"}]
         s = painel.summary(new, scores, interest, apps, True, self.dir / "nao-existe.json")
-        self.assertEqual((s["vagas_novas"], s["sem_nota"], s["bom_encaixe"]), (3, 1, 1))
+        self.assertEqual((s["vagas_novas"], s["sem_nota"], s["bom_encaixe"], s["prioritarias"]), (3, 1, 1, 1))
         self.assertEqual((s["interessam"], s["sem_avaliacao"], s["sem_documentos"]), (3, 2, 1))
         self.assertEqual(s["candidaturas"], {"drafted": 1, "applied": 1, "no_response": 1})
         self.assertIsNone(s["ultima_busca"])
 
     def test_evaluation_grade_reads_the_report_format(self):
         text = "## Avaliação\n**Nota geral: 64/100** (Competências 65×0,30 ...)\n\n### Veredito: Good Fit\n"
-        self.assertEqual(painel.evaluation_grade(text), {"nota": 64, "veredito": "Bom encaixe"})
+        self.assertEqual(painel.evaluation_grade(text), {"nota": 64, "veredito": "Bom encaixe", "alinhamento": None})
         self.assertEqual(painel.evaluation_grade("**Nota geral: 25/100**\n### Veredito: [Poor Fit]")["veredito"], "Sem encaixe")
-        self.assertEqual(painel.evaluation_grade("Nota geral: 39/100"), {"nota": 39, "veredito": None})
+        self.assertEqual(painel.evaluation_grade("Nota geral: 39/100"), {"nota": 39, "veredito": None, "alinhamento": None})
+        table = "| Alinhamento de carreira | 60/100 | EdTech e PO |\n**Nota geral: 64/100**"
+        self.assertEqual(painel.evaluation_grade(table)["alinhamento"], 60)
         for bad in (None, "", "Nota geral: 140/100", "sem nota"):
             self.assertIsNone(painel.evaluation_grade(bad), bad)
 

@@ -122,7 +122,12 @@
   .fit-alto { background: var(--accent-soft); color: var(--accent); }
   .fit-medio { background: var(--sun-soft); color: var(--sun); }
   .fit-baixo { background: var(--surface-2); color: var(--muted); }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .badges .fit { margin-bottom: 0; }
+  .grupo { font-size: .8rem; font-weight: 700; color: var(--text); }
+  .grupo-prioridade { color: var(--accent); }
   .motivo { margin: 0 0 10px; font-size: .92rem; color: var(--muted); overflow-wrap: anywhere; }
+  .motivo b { color: var(--text); font-weight: 600; }
   .steps { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 12px; font-size: .85rem; color: var(--muted); }
   .steps .done { color: var(--accent); font-weight: 600; }
   .steps .now { color: var(--text); font-weight: 700; }
@@ -295,13 +300,15 @@
         <button class="btn" id="btn-classificar">Classificar com o Claude</button>
         <span id="triage-status" class="claude-status" aria-live="polite"></span>
       </div>
-      <p class="muted">O Claude lê cada vaga nova, compara com o seu perfil e dá uma nota de encaixe. A lista passa a vir da melhor para a pior.</p>
+      <p class="muted">O Claude lê cada vaga nova e dá duas notas: <b>encaixe</b> (você atende o que a vaga pede?) e <b>interesse</b> (a vaga atende o que você quer?). Juntas, elas dizem por onde começar: ★ Prioridade (as duas altas), Plano B (dá para passar, mas a vaga te interessa menos), Aposta (te interessa, mas falta encaixe) e Descarte.</p>
     </div>
     <div class="panel">
       <div class="row">
-        <select id="f-fit" aria-label="Encaixe">
-          <option value="">Qualquer encaixe</option><option value="bom">Encaixe alto ou médio</option>
-          <option value="alto">Só encaixe alto</option><option value="sem">Ainda sem nota</option>
+        <select id="f-fit" aria-label="Prioridade">
+          <option value="">Todas as notas</option><option value="prioridade">★ Prioridade</option>
+          <option value="plano_b">Plano B</option><option value="aposta">Aposta</option>
+          <option value="descarte">Descarte</option><option value="bom">Encaixe alto ou médio</option>
+          <option value="sem">Ainda sem nota</option>
         </select>
         <input type="text" id="f-text" placeholder="Filtrar por cargo ou empresa" aria-label="Filtrar por cargo ou empresa">
         <select id="f-model" aria-label="Modelo de trabalho">
@@ -464,7 +471,10 @@ function nextStep(s) {
     : "Ainda não há busca. Ela leva de 1 a 3 minutos e usa as buscas do seu perfil.",
     "Fazer uma busca", () => { show("vagas"); document.getElementById("search-box").open = true; }];
   if (s.sem_nota) return [`Classifique ${plural(s.sem_nota, "vaga nova", "vagas novas")}`,
-    "O Claude dá uma nota de encaixe a cada uma, e você começa pelas melhores.", "Ver e classificar", () => goVagas("")];
+    "O Claude dá a cada uma uma nota de encaixe e uma de interesse, e você começa pelas melhores.", "Ver e classificar", () => goVagas("")];
+  if (s.prioritarias) return [`Comece pelas prioritárias: ${plural(s.prioritarias, "vaga", "vagas")}`,
+    "Encaixe e interesse altos: você tem chance e a vaga é do tipo que você quer. Marque \"Me interessa\" e avalie.",
+    "Ver as prioritárias", () => goVagas("prioridade")];
   if (s.bom_encaixe) return [`Separe as vagas: ${plural(s.bom_encaixe, "tem encaixe alto ou médio", "têm encaixe alto ou médio")}`,
     "Marque \"Me interessa\" nas que quer avaliar e descarte o resto.", "Separar vagas", () => goVagas("bom")];
   if (s.sem_avaliacao) return [`Avalie ${plural(s.sem_avaliacao, "vaga que te interessa", "vagas que te interessam")}`,
@@ -488,8 +498,8 @@ async function loadSummary() {
     el("span", { class: "num", text: String(num) }), el("span", { class: "label", text: label }),
     el("span", { class: "detail", text: detail }));
   document.getElementById("stats").replaceChildren(
-    stat(s.vagas_novas, "Vagas novas", s.vagas_novas ? `${s.bom_encaixe} com bom encaixe · ${s.sem_nota} sem nota` : "Faça uma busca",
-      () => goVagas()),
+    stat(s.vagas_novas, "Vagas novas", s.vagas_novas ? `${plural(s.prioritarias, "prioritária", "prioritárias")} · ${s.bom_encaixe} com bom encaixe · ${s.sem_nota} sem nota` : "Faça uma busca",
+      () => goVagas(s.prioritarias ? "prioridade" : undefined)),
     stat(s.interessam, "Me interessam", `${s.sem_avaliacao} a avaliar · ${s.sem_documentos} prontas para currículo e carta`,
       () => show("interesse")),
     stat(total, "Candidaturas", [c.drafted && `${c.drafted} em rascunho`, c.applied && `${c.applied} enviadas`,
@@ -562,9 +572,28 @@ async function loadResults() {
 }
 
 const ENCAIXE = { alto: "Encaixe alto", medio: "Encaixe médio", baixo: "Encaixe baixo" };
+const INTERESSE = { alto: "Interesse alto", medio: "Interesse médio", baixo: "Interesse baixo" };
+const GRUPOS = { prioridade: "★ Prioridade", plano_b: "Plano B", aposta: "Aposta", descarte: "Descarte" };
+const ORDEM = ["prioridade", "plano_b", "aposta", "descarte"];
+const tierOf = (n) => (n >= 70 ? "alto" : n >= 40 ? "medio" : "baixo");
+// As duas notas e o grupo: o que a triagem diz da vaga numa linha.
 function fitBadge(t) {
-  return t ? el("span", { class: "fit fit-" + t.encaixe, text: `${ENCAIXE[t.encaixe]} · ${t.nota}` }) : null;
+  if (!t) return null;
+  return el("div", { class: "badges" },
+    t.grupo ? el("span", { class: "grupo grupo-" + t.grupo, text: GRUPOS[t.grupo] }) : null,
+    el("span", { class: "fit fit-" + t.encaixe, text: `${ENCAIXE[t.encaixe]} · ${t.nota}` }),
+    t.interesse ? el("span", { class: "fit fit-" + t.interesse, text: `${INTERESSE[t.interesse]} · ${t.nota_interesse}` }) : null);
 }
+function motivos(t) {
+  if (!t || !(t.motivo || t.motivo_interesse)) return null;
+  const p = el("p", { class: "motivo" });
+  if (t.motivo) p.append(el("b", { text: "Encaixe: " }), t.motivo);
+  if (t.motivo && t.motivo_interesse) p.append(el("br"));
+  if (t.motivo_interesse) p.append(el("b", { text: "Interesse: " }), t.motivo_interesse);
+  return p;
+}
+// Ordem da lista: o grupo primeiro (as sem grupo depois), e dentro dele a soma das duas notas.
+const rank = (t) => !t ? -1 : (t.grupo ? 4 - ORDEM.indexOf(t.grupo) : 0) * 1000 + t.nota + (t.nota_interesse || 0);
 
 function card(row, decide) {
   const chips = el("div", { class: "chips" });
@@ -589,7 +618,7 @@ function card(row, decide) {
     fitBadge(row.triagem),
     el("h3", { text: row.title || "(sem título)" }),
     el("p", { class: "company", text: row.company || "Empresa não informada" }),
-    row.triagem && row.triagem.motivo ? el("p", { class: "motivo", text: row.triagem.motivo }) : null,
+    motivos(row.triagem),
     chips,
     warn ? el("div", { class: "warn", text: "⚠ " + warn }) : null,
     el("div", { class: "actions" },
@@ -604,16 +633,16 @@ function renderResults() {
   const [text, model, portal, nowarn, fit] = [filters[0].value.toLowerCase(), filters[1].value, filters[2].value,
     filters[3].checked, filters[4].value];
   const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const fitOk = (t) => !fit || (fit === "sem" ? !t : fit === "alto" ? t && t.encaixe === "alto"
-    : t && t.encaixe !== "baixo");
+  const fitOk = (t) => !fit || (fit === "sem" ? !(t && t.interesse) : fit === "bom" ? t && t.encaixe !== "baixo"
+    : t && t.grupo === fit);
   const rows = results.filter((r) =>
     (!text || fold(`${r.title} ${r.company}`).includes(fold(text))) &&
     (!model || (model === "none" ? !r.workplace_type : r.workplace_type === model)) &&
     (!portal || r.portal === portal) &&
     (!nowarn || !warningOf(r)) &&
     fitOk(r.triagem));
-  // As de nota maior primeiro; as sem nota no fim, na ordem da busca.
-  rows.sort((a, b) => (b.triagem ? b.triagem.nota : -1) - (a.triagem ? a.triagem.nota : -1));
+  // Prioridade primeiro, depois Plano B, Aposta e Descarte; as sem nota no fim, na ordem da busca.
+  rows.sort((a, b) => rank(b.triagem) - rank(a.triagem));
   const box = document.getElementById("vagas");
   document.getElementById("vagas-info").textContent = results.length
     ? `${rows.length} de ${results.length} vagas novas. "Me interessa" e "Descartar" tiram a vaga desta lista e das próximas buscas.` : "";
@@ -630,7 +659,7 @@ function renderResults() {
 function renderTriageStatus() {
   const st = document.getElementById("triage-status");
   const btn = document.getElementById("btn-classificar");
-  const pending = results.filter((r) => !r.triagem).length;
+  const pending = results.filter((r) => !(r.triagem && r.triagem.interesse)).length;
   btn.disabled = !claude.available || claude.running || !pending;
   btn.hidden = results.length > 0 && !pending && !(claude.running && claude.step === "classificar");
   btn.textContent = pending && pending < results.length ? `Classificar as ${pending} sem nota` : "Classificar com o Claude";
@@ -748,13 +777,16 @@ async function copyText(e, text, done) {
   try { await navigator.clipboard.writeText(text); e.target.textContent = done; }
   catch { prompt("Copie:", text); }
 }
-// A melhor nota que se sabe de uma vaga: a da avaliação completa, senão a da triagem.
-const bestGrade = (s) => (s.avaliacao ? s.avaliacao.nota : s.triagem ? s.triagem.nota : -1);
+// A melhor nota que se sabe de uma vaga, encaixe mais interesse: a da avaliação completa
+// (com o alinhamento de carreira), senão a da triagem. Sem o segundo eixo, conta o primeiro duas vezes.
+const bestGrade = (s) => (s.avaliacao ? s.avaliacao.nota + (s.avaliacao.alinhamento ?? s.avaliacao.nota)
+  : s.triagem ? s.triagem.nota + (s.triagem.nota_interesse ?? s.triagem.nota) : -1);
 function gradeBadge(s) {
   if (!s.avaliacao) return fitBadge(s.triagem);
-  const n = s.avaliacao.nota;
-  const tier = n >= 70 ? "alto" : n >= 40 ? "medio" : "baixo";
-  return el("span", { class: "fit fit-" + tier, text: `${s.avaliacao.veredito || "Avaliada"} · ${n}` });
+  const { nota: n, alinhamento: a } = s.avaliacao;
+  return el("div", { class: "badges" },
+    el("span", { class: "fit fit-" + tierOf(n), text: `${s.avaliacao.veredito || "Avaliada"} · ${n}` }),
+    a != null ? el("span", { class: "fit fit-" + tierOf(a), text: `Alinhamento de carreira · ${a}` }) : null);
 }
 function steps(ans) {
   const stage = ans.redigir ? 2 : ans.avaliar ? 1 : 0;
@@ -795,7 +827,7 @@ async function loadSaved() {
       gradeBadge(s),
       el("h3", { text: s.title || "(sem título)" }),
       el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal)} · marcada em ${(s.first_seen || "").split("-").reverse().join("/")}` }),
-      s.triagem && s.triagem.motivo && !ans.avaliar ? el("p", { class: "motivo", text: s.triagem.motivo }) : null,
+      ans.avaliar ? null : motivos(s.triagem),
       steps(ans),
       el("div", { class: "actions" },
         main,

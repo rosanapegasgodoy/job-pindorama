@@ -15,6 +15,16 @@ per-file diff commands.
 
 ### Added
 
+- **Panel triage scores interest, not just fit** - "Classificar com o Claude" now returns two
+  scores per posting: fit (does the candidate meet what the posting asks?) and interest (does the
+  posting give what the profile wants: target sectors, motivations, career direction, work model,
+  contract and salary against the expectation when stated, bad signals). Each comes with its own
+  one-line reason. The two together put the posting in a group: Prioridade (fit high or medium,
+  interest high), Plano B, Aposta or Descarte. The new-jobs list sorts by group, then by the sum of
+  both scores, and filters by group. Início points to the priority postings first. Scores saved
+  before this change have only fit, so they go back to the triage queue. A malformed interest is
+  dropped and the fit score kept. On "Me interessam", an evaluated job also shows the full
+  evaluation's "Alinhamento de carreira" score next to the overall grade.
 - **Panel UX, third pass: a visual identity and accessibility** - one stylesheet built on
   tokens: palm green for actions, sun ochre for the middle ground, warm paper background, with
   a dark set of the same tokens, AA contrast in both. The light theme is the default; a

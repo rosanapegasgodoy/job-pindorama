@@ -77,12 +77,13 @@ esperando por você, com um botão que leva direto para lá. Na ordem:
 1. montar o perfil, enquanto ele não existe;
 2. buscar, quando não há vaga nova;
 3. classificar as vagas novas que ainda não têm nota;
-4. separar as de encaixe alto ou médio;
-5. avaliar as vagas que te interessam;
-6. revisar e enviar as candidaturas em rascunho.
+4. começar pelas prioritárias (encaixe e interesse altos);
+5. separar as de encaixe alto ou médio;
+6. avaliar as vagas que te interessam;
+7. revisar e enviar as candidaturas em rascunho.
 
-Embaixo, quatro quadros com os números de cada etapa: vagas novas (quantas com bom encaixe e
-quantas sem nota), as que te interessam (quantas a avaliar e quantas prontas para currículo e
+Embaixo, quatro quadros com os números de cada etapa: vagas novas (quantas prioritárias, quantas
+com bom encaixe e quantas sem nota), as que te interessam (quantas a avaliar e quantas prontas para currículo e
 carta), as candidaturas por situação e o perfil. Clicar num quadro abre a aba dele.
 
 ---
@@ -186,20 +187,31 @@ No fim, aparece um resumo por portal e a lista embaixo se atualiza. As vagas que
 
 A busca traz o que os portais acharam, bom e ruim misturado. **Classificar com o Claude** faz a
 triagem que o `/scrape` faz na conversa: o Claude lê cada vaga nova (até 40 por vez), compara
-com o seu perfil e dá a cada uma:
-- um **encaixe**: alto (as suas competências centrais), médio (vizinha da sua experiência) ou
-  baixo (falta algo importante, ou bate num deal-breaker: modelo de trabalho, nível, idioma);
-- uma **nota** de 0 a 100;
-- o **motivo**, numa frase: o que bate, o que falta ou o deal-breaker.
+com o seu perfil e dá a cada uma duas notas, cada uma com o seu motivo numa frase:
+- **Encaixe** (você atende o que a vaga pede?): alto (as suas competências centrais), médio
+  (vizinha da sua experiência) ou baixo (falta algo importante, ou bate num deal-breaker: modelo
+  de trabalho, nível, idioma), com uma nota de 0 a 100.
+- **Interesse** (a vaga atende o que você quer?): alto (setor-alvo ou tema que te motiva, sem
+  deal-breaker), médio (boa vaga, mas fora dos seus setores ou só em parte alinhada) ou baixo
+  (desvio de carreira, deal-breaker ou sinais ruins), também de 0 a 100. Vem do seu perfil:
+  setores-alvo, o que te motiva, direção de carreira, modelo, regime e salário frente à
+  pretensão, quando a vaga informa.
 
-A lista passa a vir da maior nota para a menor, e o filtro **Encaixe** mostra só as de encaixe
-alto ou médio. É uma triagem rápida, pelo texto que a busca trouxe: a nota completa vem depois,
-em **Avaliar com o Claude**. As notas ficam gravadas; numa busca nova, o botão classifica só as
-vagas que ainda não têm nota.
+As duas juntas põem cada vaga num grupo:
+
+| | Interesse alto | Interesse médio ou baixo |
+|---|---|---|
+| **Encaixe alto ou médio** | ★ **Prioridade**: comece por aqui | **Plano B**: dá para passar, mas vale? |
+| **Encaixe baixo** | **Aposta**: vale se preparar | **Descarte** |
+
+A lista vem por grupo (Prioridade primeiro) e, dentro dele, pela soma das duas notas. O filtro
+mostra um grupo só, ou as de encaixe alto ou médio. É uma triagem rápida, pelo texto que a busca
+trouxe: a nota completa vem depois, em **Avaliar com o Claude**. As notas ficam gravadas; numa
+busca nova, o botão classifica só as vagas que ainda não têm as duas notas.
 
 ### A lista
 
-**Filtros:** encaixe, texto (cargo ou empresa), modelo de trabalho, portal e **só sem avisos**.
+**Filtros:** grupo de prioridade, texto (cargo ou empresa), modelo de trabalho, portal e **só sem avisos**.
 
 **Cada cartão mostra:** a nota e o motivo (depois da triagem), cargo, empresa, local, modelo, nível, regime, salário (quando o
 anúncio informa), data de publicação e em que portais a vaga apareceu. Um **⚠ aviso** aparece
@@ -238,7 +250,8 @@ avaliação aparece no cartão:
   não roda, a avaliação diz isso no topo, em vez de dar um veredito no olho.
 - **Origem:** se o link é de um portal conhecido ou de um site de recrutamento reconhecido.
 - **Notas** de competências, experiência, encaixe de cultura e carreira, a **nota geral** e o
-  **veredito** (de Strong Fit a Poor Fit).
+  **veredito** (de Strong Fit a Poor Fit). O cartão mostra a nota geral e, ao lado, a de
+  **alinhamento de carreira**: o lado do interesse na avaliação completa.
 - **Regime e salário:** a referência salarial só aparece com a página consultada, com o link.
   Sem fonte, a avaliação diz "não consultada", nunca um número de memória.
 - **Pontos fortes, lacunas e recomendação.**
@@ -355,7 +368,7 @@ vindos de outro endereço são recusados.
 | Botão | O que roda por trás |
 |---|---|
 | Buscar vagas | `tools/scrape_run.py search` (as CLIs dos portais), sem o Claude |
-| Classificar com o Claude | `claude -p`: o Passo 3 do `/scrape` nas vagas novas sem nota; o painel confere cada nota e grava em `triagem.json` |
+| Classificar com o Claude | `claude -p`: o Passo 3 do `/scrape` nas vagas novas sem nota; o painel confere as notas de encaixe e de interesse e grava em `triagem.json` |
 | Me interessa / Descartar / Tirar da lista | grava em `job_scraper/seen_jobs.json` |
 | Marquei como enviada / Chamaram para entrevista | muda a situação em `job_search_tracker.csv` e anota a data, sem o Claude |
 | Currículo (PDF) / Carta (PDF) | abre o PDF que o tracker cita; o painel só serve `cv/main_*.pdf` e `cover_letters/cover_*.pdf` de candidaturas registradas |
