@@ -41,7 +41,8 @@ Checks:
    (tools/painel.py) hands to `claude -p`, which runs with nobody to approve
    anything. Only `permissions.allow` may be set, and every entry must be in
    the allowlist for that file (ALLOWED_PAINEL_PERMISSIONS for /apply,
-   ALLOWED_PAINEL_PERFIL_PERMISSIONS for /setup); an unknown file fails. Catches a widening (a raw `lualatex:*` would
+   ALLOWED_PAINEL_PERFIL_PERMISSIONS for /setup, ALLOWED_PAINEL_FORM_PERMISSIONS
+   for filling the profile form); an unknown file fails. Catches a widening (a raw `lualatex:*` would
    also approve -shell-escape; an `rm` prefix deletes outside the repo) that
    would run unattended on every fork.
 
@@ -145,9 +146,14 @@ ALLOWED_PAINEL_PERFIL_PERMISSIONS = {
     "Edit(documents/perfil/proposta/**)",
 }
 
+# Filling the form from the uploaded PDFs only reads: the answer comes back as
+# the run's output, and the panel validates it before it reaches the form.
+ALLOWED_PAINEL_FORM_PERMISSIONS = {"Read", "Glob", "Grep"}
+
 PAINEL_SETTINGS = {
     "claude-settings.json": ALLOWED_PAINEL_PERMISSIONS,
     "claude-settings-perfil.json": ALLOWED_PAINEL_PERFIL_PERMISSIONS,
+    "claude-settings-formulario.json": ALLOWED_PAINEL_FORM_PERMISSIONS,
 }
 
 # Rules that must stay in .claude/settings.json permissions.ask. An ask rule

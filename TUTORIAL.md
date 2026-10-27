@@ -75,7 +75,9 @@ o perfil, melhores os resultados.** Você faz isso uma vez e atualiza quando alg
    Na primeira vez, ele abre direto na aba **Meu perfil**.
 2. **Seus documentos:** clique em **Enviar currículo (PDF)**. Se tiver, envie também o
    **LinkedIn (PDF)** (no LinkedIn: seu perfil > Mais > Salvar como PDF).
-3. **O que o currículo não diz:** preencha o formulário. A Ana preencheu assim:
+3. **O que o currículo não diz:** ao receber o PDF, o Claude já preenche o que der para tirar
+   dele, com uma barra verde e a origem de cada campo. Confira, complete o resto e salve. Depois
+   de conferir, o formulário da Ana ficou assim:
 
    ```
    Quem é você

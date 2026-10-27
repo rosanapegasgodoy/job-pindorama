@@ -38,6 +38,21 @@ class Form(unittest.TestCase):
         self.assertIn("documents/perfil/**", (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines())
 
 
+class Suggestion(unittest.TestCase):
+    def test_claude_answer_is_cleaned_like_the_form(self):
+        text = ('Pronto:\n```json\n{"respostas": {"genero": "feminino", "cargos": ["Product Manager", ""], '
+                '"senioridade": ["pleno", "diretoria"], "modelo": "qualquer", "cpf": "000"}, '
+                '"origem": {"genero": "inferido", "cargos": "currículo", "cpf": "currículo", "senioridade": "chute"}}\n```')
+        self.assertEqual(painel_perfil.parse_suggestion(text), {
+            "respostas": {"genero": "feminino", "cargos": ["Product Manager"], "senioridade": ["pleno"]},
+            "origem": {"genero": "inferido", "cargos": "currículo"},
+        })
+
+    def test_anything_but_the_expected_object_is_nothing(self):
+        for text in (None, "", "não achei o currículo", '{"respostas": [1]}', "{quebrado"):
+            self.assertIsNone(painel_perfil.parse_suggestion(text), text)
+
+
 class Documents(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

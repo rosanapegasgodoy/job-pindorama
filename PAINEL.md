@@ -96,7 +96,16 @@ cada resposta deixa a busca e a avaliação mais certeiras:
 | Condições | modelo (remoto, híbrido, presencial), cidades aceitas, regimes (CLT, PJ...), pretensão, deal-breakers | Descartar o que você não aceita e comparar CLT com PJ |
 | Opcional | idioma do currículo, perfil comportamental | O tom das cartas e o encaixe de cultura |
 
-Clique em **Salvar respostas**.
+**Você não começa do zero.** Assim que um PDF chega, o Claude lê os seus documentos (e o seu
+perfil, se já existir) e preenche o que der para tirar deles: cargos, níveis, competências,
+idiomas, cidade... Ele só mexe nos campos **vazios**. Cada campo preenchido por ele ganha uma
+barra verde e diz de onde veio: do currículo, do LinkedIn, do perfil atual, ou **"deduzido pelo
+Claude, confira"**. Pretensão, modelo de trabalho e regimes só entram se estiverem escritos; o
+gênero gramatical, só pelo jeito como você se descreve no texto, nunca pelo nome. Para rodar de
+novo (por exemplo, depois de enviar o LinkedIn), use **Preencher pelos documentos**.
+
+Confira, corrija o que precisar e clique em **Salvar respostas**. Até você salvar, nada do que o
+Claude sugeriu fica gravado.
 
 **Passo 3: montar o perfil.** O botão **Montar meu perfil com o Claude** (ou **Atualizar meu
 perfil**, se você já tem um) chama o Claude, que lê os documentos e as respostas e **propõe** o
@@ -260,6 +269,7 @@ vindos de outro endereço são recusados.
 |---|---|
 | Buscar vagas | `tools/scrape_run.py search` (as CLIs dos portais), sem o Claude |
 | Me interessa / Descartar | grava em `job_scraper/seen_jobs.json` |
+| Enviar um PDF / Preencher pelos documentos | `claude -p`: lê os documentos e devolve as respostas do formulário; o painel confere cada campo e só preenche os vazios |
 | Montar meu perfil | `claude -p`: o Caminho A do `/setup`, com o formulário no lugar das perguntas; grava só a proposta |
 | Aplicar ao meu perfil / Descartar | o próprio painel copia a proposta para o lugar, ou a apaga, sem o Claude |
 | Avaliar com o Claude | `claude -p`: os Passos 0 e 1 do `/apply` |
@@ -291,6 +301,7 @@ um arquivo próprio para cada botão. O que não estiver liberado é negado.
 | Botão | Arquivo | Pode |
 |---|---|---|
 | Avaliar / Fazer currículo e carta | `tools/painel/claude-settings.json` | ler; pesquisar na web; gravar só o currículo, a carta, a pesquisa de empresas, `documents/applications/` e o tracker; compilar só pelo `tools/compile_doc.py`, que desliga a execução de comandos pelo LaTeX |
+| Preencher o formulário | `tools/painel/claude-settings-formulario.json` | só ler. Não grava nada: a resposta volta para o painel, que descarta o que não for campo do formulário ou opção válida |
 | Montar meu perfil | `tools/painel/claude-settings-perfil.json` | ler; gravar só em `documents/perfil/proposta/`, nunca no perfil. **Sem web e sem shell**: o currículo é lido, nunca buscado, e nada sai do computador. Quem grava o perfil é o painel, quando você clica em Aplicar |
 
 O `tools/security_guards.py` confere esses arquivos em todo PR. O [SECURITY.md](SECURITY.md)

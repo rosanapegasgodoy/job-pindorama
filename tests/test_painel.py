@@ -3,6 +3,7 @@
 import base64
 import http.client
 import json
+import os
 import sys
 import tempfile
 import threading
@@ -103,6 +104,28 @@ class Data(unittest.TestCase):
         self.assertIn("Não grave nos arquivos do perfil", prompt)
         self.assertIn("documents/perfil/proposta/claude/skills/job-application-assistant/01-candidate-profile.md", prompt)
 
+    def test_form_prompt_needs_a_document_and_lists_the_fields(self):
+        docs, answers = self.dir / "documents", self.dir / "respostas.json"
+        with self.assertRaises(ValueError):
+            painel.claude_prompt(painel.PERFIL_KEY, "formulario", self.dir, answers, docs)
+        painel_perfil.save_upload("cv", "cv.pdf", base64.b64encode(b"%PDF-1.4 x").decode(), docs)
+        prompt = painel.claude_prompt(painel.PERFIL_KEY, "formulario", self.dir, answers, docs)
+        self.assertIn("- genero [choice]: Nos textos em português, escrever no (opções: feminino, masculino, neutro)", prompt)
+        self.assertIn("nunca pelo nome", prompt)
+        self.assertIn('{"respostas": {"<campo>"', prompt)
+        self.assertIn(str(painel.CLAUDE_SETTINGS_FORMULARIO), painel.claude_command("claude", "formulario"))
+
+    def test_suggestion_is_new_until_the_form_is_saved_again(self):
+        answers = self.dir / "respostas.json"
+        self.assertIsNone(painel.suggestion(self.dir, answers))
+        out = painel.claude_file(painel.PERFIL_KEY, "formulario", self.dir)
+        out.write_text('{"respostas": {"cidade": "Campinas - SP"}, "origem": {"cidade": "currículo"}}', encoding="utf-8")
+        self.assertEqual(painel.suggestion(self.dir, answers),
+                         {"respostas": {"cidade": "Campinas - SP"}, "origem": {"cidade": "currículo"}, "nova": True})
+        painel_perfil.save_answers({"cidade": "Campinas - SP"}, answers)
+        os.utime(answers, (out.stat().st_mtime + 5,) * 2)
+        self.assertFalse(painel.suggestion(self.dir, answers)["nova"])
+
     def test_claude_answer_files_are_named_by_hash_inside_the_folder(self):
         f = painel.claude_file("https://x/../../etc", "avaliar", self.dir)
         self.assertEqual(f.parent, self.dir)
@@ -193,6 +216,7 @@ class Server(unittest.TestCase):
         self.assertEqual(self.request("POST", "/api/upload", pdf)[0], 403)
         status, data, _ = self.request("POST", "/api/upload", pdf, h)
         self.assertEqual((status, json.loads(data)["saved"]), (200, "cv.pdf"))
+        self.assertIn("filling", json.loads(data))  # o Claude preenche o formulário quando está livre
         self.assertTrue((self.documents / "cv" / "cv.pdf").is_file())
         self.assertEqual(self.request("POST", "/api/upload", {**pdf, "name": "cv.exe"}, h)[0], 400)
         status, data, _ = self.request("POST", "/api/profile", {"genero": "neutro", "extra": "x"}, h)

@@ -15,6 +15,16 @@ per-file diff commands.
 
 ### Added
 
+- **The panel fills the profile form from the uploaded PDFs** - uploading a CV or LinkedIn PDF
+  starts a read-only `claude -p` run (`tools/painel/claude-settings-formulario.json`: Read, Glob,
+  Grep) that returns the form answers as JSON, also drawing on an existing profile. The panel
+  validates them against the form (`painel_perfil.parse_suggestion`: unknown fields and invalid
+  options are dropped), fills only the empty fields, marks each one with its source (CV, LinkedIn,
+  current profile, or inferred) and saves nothing until the user does. Salary, work model and
+  contract types are taken only when written down; grammatical gender only from how the person
+  describes themselves, never from the name. A "Preencher pelos documentos" button reruns it.
+  Guard check 6 gets its own read-only allowlist.
+
 - **`PAINEL.md`, the panel's whole flow in one guide** - the panel had grown from a search page into
   profile, search, triage, evaluation and drafting, but its documentation was split across the
   README, `COMECE-AQUI.md` and `SECURITY.md`. The guide walks through every tab in order with a

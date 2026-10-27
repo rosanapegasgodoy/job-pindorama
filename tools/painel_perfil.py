@@ -135,6 +135,30 @@ def format_answers(answers: dict) -> str:
     return "\n".join(lines)
 
 
+ORIGINS = {"currículo", "LinkedIn", "perfil", "inferido"}
+
+
+def parse_suggestion(text: str | None) -> dict | None:
+    """As respostas que o Claude tirou dos documentos, validadas como as do formulário.
+
+    O Claude devolve um objeto JSON {"respostas": {...}, "origem": {campo: de onde veio}};
+    o que vier fora do formulário, ou fora das opções de cada campo, é descartado.
+    """
+    if not text:
+        return None
+    start, end = text.find("{"), text.rfind("}")
+    try:
+        data = json.loads(text[start:end + 1]) if 0 <= start < end else None
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("respostas"), dict):
+        return None
+    answers = clean_answers(data["respostas"])
+    origin = data.get("origem") if isinstance(data.get("origem"), dict) else {}
+    return {"respostas": answers,
+            "origem": {k: v for k, v in origin.items() if k in answers and v in ORIGINS}}
+
+
 # ---------------------------------------------------------------------------
 # Documentos
 # ---------------------------------------------------------------------------

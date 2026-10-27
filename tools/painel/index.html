@@ -82,6 +82,8 @@
   form.perfil textarea { min-height: 4.5em; resize: vertical; }
   form.perfil .opts { display: flex; gap: 6px 14px; flex-wrap: wrap; }
   form.perfil .help { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+  form.perfil .field.sugerido { border-left: 3px solid var(--accent); padding-left: 10px; }
+  form.perfil .origem { color: var(--accent); font-size: .85rem; font-weight: 600; margin-top: 2px; }
   ul.files { margin: 8px 0 0; padding-left: 18px; }
   ul.files li { margin-bottom: 4px; overflow-wrap: anywhere; }
   pre.diff { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--chip); padding: 8px 10px; border-radius: 8px;
@@ -122,7 +124,10 @@
     </div>
     <div class="panel">
       <h2>2. O que o currículo não diz</h2>
-      <p class="muted">Tudo é opcional, mas cada resposta deixa a busca e a avaliação das vagas mais certeiras.</p>
+      <p class="muted">Tudo é opcional, mas cada resposta deixa a busca e a avaliação das vagas mais certeiras.
+        Ao receber um documento, o Claude já preenche o que der para tirar dele; você confere e salva.</p>
+      <p><button class="btn secondary" id="btn-preencher">Preencher pelos documentos</button></p>
+      <p id="fill-status" class="claude-status" aria-live="polite"></p>
       <form id="perfil-form" class="perfil"></form>
       <div class="row"><button class="btn" id="btn-save-perfil">Salvar respostas</button> <span id="save-status" aria-live="polite"></span></div>
     </div>
@@ -403,7 +408,8 @@ function markdown(text) {
 }
 
 // ---- me interessam ----
-const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta", perfil: "montando o seu perfil" };
+const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta", perfil: "montando o seu perfil",
+  formulario: "preenchendo o formulário pelos seus documentos" };
 let claude = { available: true, running: false };
 let claudePolling = null;
 
@@ -470,6 +476,7 @@ async function loadProfile(refresh) {
   renderPrivacy();
   renderFiles();
   if (!document.getElementById("perfil-form").childElementCount) renderForm();
+  applySuggestion();
   renderPerfilStatus();
   const out = document.getElementById("perfil-out");
   out.replaceChildren(
@@ -566,7 +573,7 @@ function renderForm() {
           ...f.options.map((o) => el("label", {}, el("input", { type: multi ? "checkbox" : "radio", name: f.key, value: o,
             ...((multi ? (a[f.key] || []).includes(o) : a[f.key] === o) ? { checked: "" } : {}) }), NOMES[o] || o)));
       }
-      const wrap = el(f.type === "multi" || f.type === "choice" ? "div" : "label", { class: "field" },
+      const wrap = el(f.type === "multi" || f.type === "choice" ? "div" : "label", { class: "field", "data-key": f.key },
         el("span", { text: f.label }), input, f.help ? el("div", { class: "help", text: f.help }) : null);
       if (wrap.tagName === "LABEL") wrap.setAttribute("for", id);
       return wrap;
@@ -584,9 +591,57 @@ function collectForm() {
   return out;
 }
 
+// O que o Claude tirou dos documentos entra só nos campos vazios, em destaque, até a pessoa salvar.
+const ORIGEM = { "currículo": "Do seu currículo", LinkedIn: "Do seu LinkedIn", perfil: "Do seu perfil atual",
+  inferido: "Deduzido pelo Claude, confira" };
+let suggestionShown = null;
+function applySuggestion() {
+  const s = perfil.suggestion;
+  const sig = s && JSON.stringify(s.respostas);
+  if (!s || !s.nova || sig === suggestionShown) return;
+  suggestionShown = sig;
+  const current = collectForm();
+  let filled = 0;
+  for (const [key, value] of Object.entries(s.respostas)) {
+    const f = perfil.schema.flatMap((sec) => sec.fields).find((x) => x.key === key);
+    const now = current[key];
+    if (!f || (Array.isArray(now) ? now.length : now.trim())) continue;
+    if (f.type === "multi" || f.type === "choice") {
+      const want = Array.isArray(value) ? value : [value];
+      document.querySelectorAll(`#perfil-form input[name="${key}"]`).forEach((i) => { i.checked = want.includes(i.value); });
+    } else document.getElementById("pf-" + key).value = Array.isArray(value) ? value.join("\n") : value;
+    const wrap = document.querySelector(`#perfil-form .field[data-key="${key}"]`);
+    wrap.classList.add("sugerido");
+    wrap.append(el("div", { class: "origem", text: ORIGEM[s.origem[key]] || "Sugerido pelo Claude, confira" }));
+    filled++;
+  }
+  document.getElementById("fill-status").textContent = filled
+    ? `O Claude preencheu ${filled} campo(s) pelos seus documentos, marcados com uma barra verde. Confira, corrija o que precisar e clique em Salvar respostas.`
+    : "O Claude leu os documentos, mas não achou nada para os campos que estão vazios.";
+}
+function clearSuggestion() {
+  document.querySelectorAll("#perfil-form .field.sugerido").forEach((w) => {
+    w.classList.remove("sugerido");
+    w.querySelectorAll(".origem").forEach((o) => o.remove());
+  });
+  document.getElementById("fill-status").textContent = "";
+}
+async function startFill() {
+  try {
+    await api("/api/claude", { step: "formulario" });
+    await refreshClaude();
+    if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
+  } catch (e) { document.getElementById("fill-status").textContent = "Não consegui chamar o Claude: " + e.message; }
+}
+
 async function saveForm() {
   const st = document.getElementById("save-status");
-  try { perfil.answers = (await api("/api/profile", collectForm())).answers; st.textContent = "Respostas salvas."; return true; }
+  try {
+    perfil.answers = (await api("/api/profile", collectForm())).answers;
+    clearSuggestion();
+    st.textContent = "Respostas salvas.";
+    return true;
+  }
   catch (e) { st.textContent = "Não consegui salvar: " + e.message; return false; }
 }
 
@@ -605,6 +660,14 @@ function renderPerfilStatus() {
   else if (claude.error && claude.step === "perfil") st.append(el("span", { class: "error", text: "O Claude não terminou: " + claude.error }));
   else if (!hasDocs) st.textContent = "Envie o currículo para liberar este botão.";
   else if (needConfirm) st.textContent = "Marque a confirmação de privacidade acima para liberar este botão.";
+  const fill = document.getElementById("btn-preencher");
+  const fst = document.getElementById("fill-status");
+  fill.disabled = !claude.available || claude.running || !hasDocs;
+  if (claude.running && claude.step === "formulario") {
+    fst.replaceChildren(el("span", { class: "spinner", "aria-hidden": "true" }), " O Claude está lendo os seus documentos para preencher o formulário…");
+  } else if (claude.error && claude.step === "formulario") {
+    fst.replaceChildren(el("span", { class: "error", text: "O Claude não terminou: " + claude.error }));
+  } else if (fst.querySelector(".spinner")) fst.textContent = "";
 }
 
 document.querySelectorAll("[data-upload]").forEach((b) => b.addEventListener("click", () => {
@@ -624,13 +687,19 @@ document.getElementById("upload-input").addEventListener("change", (e) => {
       const res = await api("/api/upload", { kind: uploadKind, name: file.name, data });
       perfil.files = res.files;
       st.textContent = `Recebido: ${res.saved}.`;
-      renderFiles(); renderPerfilStatus();
+      renderFiles();
+      if (res.filling) {
+        await refreshClaude();
+        if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
+      }
+      renderPerfilStatus();
     } catch (err) { st.textContent = "Não consegui guardar: " + err.message; }
   };
   st.textContent = "Enviando…";
   reader.readAsDataURL(file);
 });
 document.getElementById("btn-save-perfil").addEventListener("click", saveForm);
+document.getElementById("btn-preencher").addEventListener("click", startFill);
 document.getElementById("confirm-public").addEventListener("change", renderPerfilStatus);
 document.getElementById("btn-perfil").addEventListener("click", async () => {
   if (!(await saveForm())) return;

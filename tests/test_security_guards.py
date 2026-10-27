@@ -146,6 +146,17 @@ class PainelPermissionGuardTests(GuardRepoFixture):
         self.assertEqual(result.returncode, 1)
         self.assertIn("'WebFetch'", result.stdout)
 
+    def test_form_settings_only_read(self):
+        path = self.root / "tools" / "painel" / "claude-settings-formulario.json"
+        path.parent.mkdir(exist_ok=True)
+        path.write_text((REPO_ROOT / "tools" / "painel" / "claude-settings-formulario.json").read_text(encoding="utf-8"))
+        self.assertEqual(run_guards(self.root).returncode, 0)
+        # Filling the form reads the PDFs; it never writes, not even a proposal.
+        path.write_text(json.dumps({"permissions": {"allow": ["Read", "Edit(documents/perfil/proposta/**)"]}}))
+        result = run_guards(self.root)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Edit(documents/perfil/proposta/**)", result.stdout)
+
     def test_unknown_panel_settings_file_fails(self):
         path = self.root / "tools" / "painel" / "claude-settings-extra.json"
         path.parent.mkdir(exist_ok=True)
